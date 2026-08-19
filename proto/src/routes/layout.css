@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+@theme { 
+    /* background */
+    --color-bg-dark: oklch(0.18 0.035 260);
+    --color-bg: oklch(0.22 0.04 260);
+    --color-bg-light: oklch(0.28 0.055 260);
+
+    /* Text */
+    --color-text: oklch(0.96 0.01 260);
+    --color-text-muted: oklch(0.68 0.025 260);
+    --color-text-action: oklch(51.1% 0.262 276.966);
+
+
+    /* Border */
+    --color-border: oklch(0.32 0.045 260);
+
+    /* Gradient */
+    --color-gradient-start: oklch(0.30 0.06 260);
+    --color-gradient-end: oklch(0.36 0.07 260);
+}
+
+/* original colours */
+/* Page left:       rgb(9, 14, 36)
+Page right:      #151B30
+Filter/input:    gray-700
+Row/card:        rgb(40, 49, 87)
+Border:          gray-700
+Text:            white
+Placeholder:     #94a3b8 */
