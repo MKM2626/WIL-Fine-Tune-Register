@@ -40,7 +40,7 @@
    let pageSizeInput = $state(500);
 
    // The results from call
-   let results = $derived(search({...appliedFilters, page, pageSize}))
+   let results = $derived(search({...appliedFilters, page, pageSize, descending: true}))
 
    // Pagination controls
    async function applyPageSize() {
@@ -343,17 +343,17 @@
       
    </thead>
    <tbody>
-      {#each (await results).data as row}
+      {#each (await results).rows as row}
          <tr>
             <td class="border border-gray-300 ...">{row.date.toISOString()}</td>
             <td class="border border-gray-300 ...">{row.rule}</td>
             <td class="border border-gray-300 ...">{row.customer}</td>
             <td class="border border-gray-300 ...">{row.technology}</td>
-            <td class="border border-gray-300 ...">{row.before}</td>
+            <!-- <td class="border border-gray-300 ...">{row.before}</td>
             <td class="border border-gray-300 ...">{row.after}</td>
             <td class="border border-gray-300 ...">{row.global ? 'Yes' : 'No'}</td>
             <td class="border border-gray-300 ...">{row.analyst}</td>
-            <td class="border border-gray-300 ...">{row.comment}</td>
+            <td class="border border-gray-300 ...">{row.comment}</td> -->
 
             <!-- Buttons -->
             <td class="border border-gray-300 ...">
@@ -363,7 +363,7 @@
                <a href="/create/{row.id}">UPDATE</a>
             </td>
             <td class="border border-gray-300 ...">
-               <button type="button" onclick={() => del(row.id)}>DELETE</button>
+               <!-- <button type="button" onclick={() => del(row.id)}>DELETE</button> -->
             </td>
          </tr>
       
