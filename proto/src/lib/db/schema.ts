@@ -1,40 +1,70 @@
-import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { int, sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 export const rules = sqliteTable('rules', {
-	id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()), 
+	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull()
 });
 
-// text('id').primaryKey().$defaultFn(() => crypto.randomUUID())
 export const technologies = sqliteTable("technologies", {
-	id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()), 
+	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull()
 });
 
 export const customers = sqliteTable("customers", {
-	id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()), 
+	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull(),
 
-	technologyId: text("technology_id").notNull().references(() => technologies.id)
+	technologyId: integer().notNull().references(() => technologies.id) // saying customer technologyId no exist no column
 });
 
 export const analysts = sqliteTable("analysts", {
-	id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()), 
+	id: integer().primaryKey({ autoIncrement: true }),
 	name: text().notNull()
 });
 
-// put in global after, based on which technology is being changed
-
 export const fine_tunes = sqliteTable("fine_tunes", {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()), 
+    id: integer().primaryKey({ autoIncrement: true }),
     date: int({ mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
-    ruleId: text().references(() => rules.id).notNull(),
-    customerId: text().references(() => customers.id).notNull(),
+    ruleId: integer().references(() => rules.id).notNull(),
+    customerId: integer().references(() => customers.id).notNull(),
 	globalId: text(),
-	global: int({ mode: "boolean"}).notNull().default(false),
-	before: text().notNull(),
-    after: text().notNull(),
-    analystId: text().references(() => analysts.id).notNull(),
+
+	fineTune: text().notNull(),  
+
+	finalised: integer ({ mode: "boolean"}).notNull().$defaultFn(() => false),
+
+    analystId: integer().references(() => analysts.id).notNull(),
     comment: text()
 });
 
+
+
+// Assume there is version control for rules
+export const golden_rules = sqliteTable("golden_rules", {
+	ruleId: integer().primaryKey({ autoIncrement: true }),
+	date: int({ mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+	
+	fineTune: text().notNull(),
+
+	analystId: integer().references(() => analysts.id).notNull(),
+	comment: text()
+})
+
+export const drafts = sqliteTable("drafts", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	date: int({ mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+
+	tags: text('tags', { mode: 'json' }).$type<string[]>(), 
+
+	ruleId: integer().references(() => rules.id),
+    customerId: integer().references(() => customers.id),
+
+	globalId: text(),
+
+	fineTune: text(),
+
+    analystId: integer().references(() => analysts.id).notNull(),
+    comment: text()
+})
+
+// later add user and roles v
