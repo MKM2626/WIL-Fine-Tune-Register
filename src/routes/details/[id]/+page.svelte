@@ -159,7 +159,10 @@
         <span class="w-32 text-text-muted">
             Finalised: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.finalised} disabled class="checked:accent-green-800">
+        <input type="checkbox" checked={selectedFineTune.finalised} disabled
+            class={`appearance-none h-3 w-3 border rounded-xs shadow-sm align-bottom relative -bottom-0.75 flex items-center justify-center font-bold text-[12px] text-white cursor-pointer
+            ${selectedFineTune.finalised ? 'bg-green-500 border-green-500 before:content-["✓"]' : 'bg-red-500 border-red-500 before:content-["✗"]'}`}
+        >
     </div>
 
     <!-- colour changes when move off page, want green / red checked / not checked -->
@@ -168,7 +171,10 @@
         <span class="w-32 text-text-muted">
             Global: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.global} disabled class="checked:accent-green-800">
+        <input type="checkbox" checked={selectedFineTune.global} disabled 
+            class={`appearance-none h-3 w-3 border rounded-xs shadow-sm align-bottom -bottom-0.75 relative flex items-center justify-center font-bold text-[12px] text-white cursor-pointer
+            ${selectedFineTune.global ? 'bg-green-500 border-green-500 before:content-["✓"]' : 'bg-red-500 border-red-500 before:content-["✗"]'}`}
+        >
     </div>
 
 
@@ -180,12 +186,9 @@
                 onclick={() => expanded = !expanded}
             >
                 <span class="w-32 shrink-0 text-text-muted">
-                    Global Customers:
+                    {expanded ? '▲' : '▼'} Global Customers:
                 </span>
 
-                <span class="text-text-muted">
-                    {expanded ? '▲' : '▼'}
-                </span>
             </button>
 
             {#if expanded}
