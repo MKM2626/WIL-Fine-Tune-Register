@@ -20,6 +20,9 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
+      drizzle-kit:
+        specifier: 1.0.0-rc.4
+        version: 1.0.0-rc.4
       drizzle-orm:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4(@libsql/client@0.17.4)(arktype@2.2.3)
@@ -45,9 +48,6 @@ importers:
       add:
         specifier: ^2.0.9
         version: 2.0.9
-      drizzle-kit:
-        specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4
       prettier:
         specifier: ^3.8.3
         version: 3.9.6
