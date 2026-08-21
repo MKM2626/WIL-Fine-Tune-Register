@@ -11,7 +11,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check .",
-		"createTry": "pnpm run drizzle && pnpm run db:seeder && pnpm run build",
+		"createTry": "pnpm run drizzle-kit push && pnpm run db:seeder && pnpm run build",
 		"format": "prettier --write .",
 		"db:seeder": "pnpm exec node --experimental-strip-types scripts/seeder.ts",
 		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts",
@@ -24,7 +24,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
 		"add": "^2.0.9",
-		"drizzle-kit": "1.0.0-rc.4",
+		
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.1.0",
 		"prettier-plugin-tailwindcss": "^0.8.0",
@@ -45,6 +45,7 @@
 		"diff": "^9.0.0",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "1.0.0-rc.4",
-		"fast-diff": "^1.3.0"
+		"fast-diff": "^1.3.0",
+		"drizzle-kit": "1.0.0-rc.4"
 	}
 }
