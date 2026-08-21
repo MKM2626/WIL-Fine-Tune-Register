@@ -46,7 +46,7 @@ for (let i = 0; i <10; i++) {
 
     mockFineTunes.push({
         ruleId: faker.helpers.arrayElement(actualRules).id,
-        date: faker.date.anytime(),
+        date: faker.date.between({from: new Date('2000-01-01'), to: new Date('2025-12-31T23:59:59.999Z')}),
         customerId: faker.helpers.arrayElement(actualCustomers).id,
         
         fineTune: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
