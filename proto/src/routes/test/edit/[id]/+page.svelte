@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getFineTune, getAnalysts, editForm, testSearch } from "#lib/remote/registers.remote";
+    import { getFineTune, getAnalysts, editForm, search } from "#lib/remote/registers.remote";
 	import { getSearchContext } from "#lib/context/search";
     import { goto } from "$app/navigation";
 
@@ -24,7 +24,7 @@
         <div class="flex gap-3">
             <button
                 type="button"
-                onclick={()=>goto(`/tests/details/${id}`)}
+                onclick={()=>goto(`/test/details/${id}`)}
                 class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Cancel
@@ -32,7 +32,7 @@
 
             <button
                 type="submit"
-                onclick={()=>testSearch(searchInfo).refresh()}
+                onclick={()=>search(searchInfo).refresh()}
                 class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Save
