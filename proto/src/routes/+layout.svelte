@@ -1,5 +1,6 @@
 <script lang="ts">
     let { children } = $props();
+    import './layout.css'
     import { search } from "#lib/remote/registers.remote";
     import { goto } from "$app/navigation"
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
