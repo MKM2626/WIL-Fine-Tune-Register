@@ -13,7 +13,8 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"db:seeder": "pnpm exec node --experimental-strip-types scripts/seeder.ts",
-		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts"
+		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts",
+		"db:reset": "pnpm run db:clean && pnpm run db:seeder"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^10.5.0",
