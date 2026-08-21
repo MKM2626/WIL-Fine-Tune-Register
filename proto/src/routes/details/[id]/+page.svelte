@@ -49,7 +49,7 @@
     async function del() {
         await deleteRow(id)
         search(searchInfo).refresh()
-        goto("/test/")
+        goto("/")
     }
 </script>
 
@@ -61,14 +61,14 @@
     <div class="flex gap-3">
         <button 
             class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
-            onclick={()=> goto(`/test/edit/${id}`)}
+            onclick={()=> goto(`/edit/${id}`)}
         >
             Edit
         </button>
 
         <button 
             class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
-            onclick={()=> goto(`/test/update/${id}`)}
+            onclick={()=> goto(`/update/${id}`)}
         >
             Update
         </button>

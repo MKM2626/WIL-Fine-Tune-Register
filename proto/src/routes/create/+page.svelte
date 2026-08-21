@@ -41,7 +41,7 @@
         <div class="flex gap-3">
             <button 
                 type="button"
-                onclick={()=>goto(`/test/`)}
+                onclick={()=>goto(`/`)}
                 class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Cancel
