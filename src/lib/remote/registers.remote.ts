@@ -42,7 +42,7 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         technology: result.technology,
         before: isBefore?.before ?? "Initial Rule",
         after: result.after,
-        finalised: result.finalised == null ? false : true,
+        finalised: result.finalised,
         global: result.globalId == null ? false : true,
         analystId: String(result.analystId),
         analyst: result.analyst,
@@ -58,12 +58,12 @@ export const getDetails = query(ftSchema, async (ftId) => {
         rule: rules.name,
         customerId: fine_tunes.customerId,
         customer: customers.name,
-        technologyId: customers.technologyId,
+        // technologyId: customers.technologyId,
         technology: technologies.name,
         after: fine_tunes.fineTune,
         globalId: fine_tunes.globalId,
         finalised: fine_tunes.finalised,
-        analystId: fine_tunes.analystId,
+        // analystId: fine_tunes.analystId,
         analyst: analysts.name,
         comment: fine_tunes.comment
     })
@@ -91,7 +91,7 @@ export const getDetails = query(ftSchema, async (ftId) => {
         after: result.after,
         global: result.globalId === null ? false : true,
         globals: globals,
-        finalised: result.finalised === null ? false : true,
+        finalised: result.finalised,
         // analystId: String(result.analystId),
         analyst: result.analyst,
         comment: result.comment
@@ -135,7 +135,8 @@ export const deleteRow = command(dSchema, async (ftID) => {
 
 const editSchema = type({
         id: "string.numeric.parse",
-        after: "string",
+        "after?": "string",
+        "finalised?": "boolean",
         comment: "string",
         analystId: "string.numeric.parse"
     })
@@ -146,13 +147,24 @@ export const editForm = form(
         // Need to add if finalised handler. If finalised can't change fine tune, otherwise can.
         // Would need database call
 
+        const [finalised] = await db.select({finalsed: fine_tunes.finalised}).from(fine_tunes).where(eq(fine_tunes.id, data.id))
+
+        if (finalised || data.after == null) {
+            await db.update(fine_tunes).set({
+                comment: data.comment,
+                analystId: data.analystId
+            })
+            .where(eq(fine_tunes.id, data.id))
+            redirect(303, `/details/${data.id}`)
+        }
+
         await db.update(fine_tunes).set({
             fineTune: data.after,
             comment: data.comment,
-            analystId: data.analystId
+            analystId: data.analystId,
+            finalised: data.finalised
         })
         .where(eq(fine_tunes.id, data.id))
-
         redirect(303, `/details/${data.id}`)
     }
 )
