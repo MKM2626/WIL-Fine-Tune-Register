@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getAnalysts, getFineTune, createForm, testSearch } from "#lib/remote/registers.remote";
+	import { getAnalysts, getFineTune, createForm, search } from "#lib/remote/registers.remote";
     import { getSearchContext } from "#lib/context/search";
 	import { goto } from "$app/navigation";
 
@@ -8,15 +8,14 @@
 
 	let { params } = $props();
 
-	let fineTune = $derived(await getFineTune(params.id));
+    let id = $derived(params.id)
+
+	let fineTune = $derived(await getFineTune(id));
 
 	let analysts = await getAnalysts();
  
    
 </script>
-
-<!-- Comment update doesn't work correctly, and global update is not consistent with before and after for global. may need to be async -->
- <!-- create don't do comments well -->
 
 <form {...createForm} class="max-w-5xl">
 
@@ -37,7 +36,7 @@
 
             <button
                 type="submit"
-                onclick={()=>testSearch(searchInfo).refresh()}
+                onclick={()=>search(searchInfo).refresh()}
                 class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Save
@@ -118,7 +117,7 @@
                 {...createForm.fields.analystID.as("select", fineTune.analystId)}
             >
                 {#each analysts as analyst}
-                    <option value={analyst.id}>
+                    <option value={analyst.id}> 
                         {analyst.name}
                     </option>
                 {/each}

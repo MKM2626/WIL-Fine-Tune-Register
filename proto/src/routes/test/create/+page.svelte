@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, testSearch } from "#lib/remote/registers.remote";
+	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, search } from "#lib/remote/registers.remote";
     import { getSearchContext } from "#lib/context/search";
 	import { goto } from "$app/navigation";
 
@@ -49,7 +49,7 @@
 
             <button
                 type="submit"
-                onclick={()=>testSearch(searchInfo).refresh()}
+                onclick={()=>search(searchInfo).refresh()}
                 class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Save
