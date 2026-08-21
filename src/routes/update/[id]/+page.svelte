@@ -84,6 +84,8 @@
             <input
                 id="global"
                 {...createForm.fields.global.as("checkbox", fineTune.global)}
+                class={`appearance-none h-3 w-3 border rounded-xs shadow-sm align-bottom relative flex items-center justify-center font-bold text-[12px] text-white cursor-pointer
+                        ${createForm.fields.global.value() ? 'bg-green-500 border-green-500 before:content-["✓"]' : 'bg-red-500 border-red-500 before:content-["✗"]'}`}
             />
             <label for="global">
                 Global — apply to all customers using this technology
