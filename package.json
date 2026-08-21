@@ -11,7 +11,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check .",
-		"createTry": "pnpm run install && pnpm run drizzle-kit push && pnpm run db:seeder && pnpm run build",
+		"createTry": "pnpm install && pnpm run drizzle-kit push && pnpm run db:seeder && pnpm run build",
 		"format": "prettier --write .",
 		"db:seeder": "pnpm exec node --experimental-strip-types scripts/seeder.ts",
 		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts",
