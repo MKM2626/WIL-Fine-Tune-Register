@@ -13,11 +13,11 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         rule: rules.name,
         customerId: fine_tunes.customerId,
         customer: customers.name,
-        technologyId: customers.technologyId,
+        // technologyId: customers.technologyId,
         technology: technologies.name,
         after: fine_tunes.fineTune,
         globalId: fine_tunes.globalId,
-
+        finalised: fine_tunes.finalised,
         analystId: fine_tunes.analystId,
         analyst: analysts.name,
         comment: fine_tunes.comment
@@ -38,10 +38,11 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         rule: result.rule,
         customerId: String(result.customerId),
         customer: result.customer,
-        technologyId: String(result.technologyId),
+        // technologyId: String(result.technologyId),
         technology: result.technology,
         before: isBefore?.before ?? "Initial Rule",
         after: result.after,
+        finalised: result.finalised == null ? false : true,
         global: result.globalId == null ? false : true,
         analystId: String(result.analystId),
         analyst: result.analyst,
@@ -61,7 +62,7 @@ export const getDetails = query(ftSchema, async (ftId) => {
         technology: technologies.name,
         after: fine_tunes.fineTune,
         globalId: fine_tunes.globalId,
-
+        finalised: fine_tunes.finalised,
         analystId: fine_tunes.analystId,
         analyst: analysts.name,
         comment: fine_tunes.comment
@@ -80,17 +81,18 @@ export const getDetails = query(ftSchema, async (ftId) => {
     
     return { 
         date: result.date,
-        ruleId: String(result.ruleId),
+        // ruleId: String(result.ruleId),
         rule: result.rule,
-        customerId: String(result.customerId),
+        // customerId: String(result.customerId),
         customer: result.customer,
-        technologyId: String(result.technologyId),
+        // technologyId: String(result.technologyId),
         technology: result.technology,
         before: isBefore?.before ?? "Initial Rule",
         after: result.after,
         global: result.globalId === null ? false : true,
         globals: globals,
-        analystId: String(result.analystId),
+        finalised: result.finalised === null ? false : true,
+        // analystId: String(result.analystId),
         analyst: result.analyst,
         comment: result.comment
     }
