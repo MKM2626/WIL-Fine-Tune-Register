@@ -1,42 +1,53 @@
-# sv
+# WIL Fine Tune Register
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+This is a fine tune register to allow cybersecurity analysts to create, manage and track changes to cybersecurity rules
 
-## Creating a project
+## Features 
+### Core Operations
+* Create    -   Add new fine tune entry
+* Edit      -   Edit analyst, comment, and fine tune (depending on if it has been set to finalised)
+* Update    -   Create a new version of an existing fine tune entry
+* Delete    -   Delete a fine tune entry
 
-If you're seeing this, you've probably already done this step. Congrats!
+### Global Operations
+* Global Create:
+    Allows you to create a fine tune suggestion for all customers with the same technology
 
-```sh
-# create a new project
-npx sv create my-app
-```
+* Global Update:
+    Allows you to create a fine tune suggestion of a specific rule for all custommers with the same technology
 
-To recreate this project with the same configuration:
+* Fine Tune Finalisation: 
+    Can edit fine tune, but not once it has been finalised
 
-```sh
-# recreate this project
-pnpm dlx sv@0.17.0 create --template minimal --types ts --add tailwindcss="plugins:none" experimental="versions:kit+features:async,remoteFunctions" prettier --install pnpm proto
-```
+### Search and sort
+* Search: 
+    Can search by rules, customers, and technologies
+* Sort: 
+    Allows you to sort by date, descending or ascending
+* Filter: 
+    Allows you to filter your search by a date range
 
-## Developing
+### Highlight Fine Tune Changes
+* Highligh Fine Tune Changes
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-```sh
-npm run dev
+## Requirments 
+Before installing the project, you must have: 
+* Node.js: Version 20.
+* pnpm: This project uses pnpm as the package manage. Make sure to install it. 
+    `npm install -g pnpm`
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
 
-## Building
+## Installation 
+### 1. Clone the repository 
+run `git clone <(https://github.com/MKM2626/WIL-Fine-Tune-Register.git)>`
 
-To create a production version of your app:
+### 2. Install dependencies
+run `pnpm install` to install all the required packages
 
-```sh
-npm run build
-```
+### 4. Setup the Database
+To create the database run `pnpm drizzle-kit push`
+to seed the database rune `pnpm run db:reset`
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### 5. Start the Server
+To launch the local server run `pnpm run dev`
