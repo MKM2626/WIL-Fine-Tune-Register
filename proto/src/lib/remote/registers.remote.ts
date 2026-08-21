@@ -151,7 +151,7 @@ export const editForm = form(
         })
         .where(eq(fine_tunes.id, data.id))
 
-        redirect(303, `/test/details/${data.id}`)
+        redirect(303, `/details/${data.id}`)
     }
 )
 
@@ -181,7 +181,7 @@ export const createForm = form(
                 id: fine_tunes.id
             })
 
-            redirect(303, `/test/details/${returnId.id}`)
+            redirect(303, `/details/${returnId.id}`)
         }
 
         // get tech id
@@ -226,7 +226,7 @@ export const createForm = form(
             })
         }
 
-        redirect(303, `/test/details/${returnId.id}`)
+        redirect(303, `/details/${returnId.id}`)
     }
 )
 
