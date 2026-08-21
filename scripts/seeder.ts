@@ -42,7 +42,7 @@ for (let i = 0; i <20; i++) {
 const actualAnalysts = await db.insert(schema.analysts).values(mockAnalysts).returning()
 
 const mockFineTunes: (typeof schema.fine_tunes.$inferInsert) []= [];
-for (let i = 0; i <10; i++) {
+for (let i = 0; i <30; i++) {
 
     mockFineTunes.push({
         ruleId: faker.helpers.arrayElement(actualRules).id,
@@ -51,7 +51,7 @@ for (let i = 0; i <10; i++) {
         
         fineTune: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
        
-        finalised: faker.helpers.maybe(() => true, {probability: 0.7}),
+        finalised: faker.helpers.maybe(() => true, {probability: 0.5}),
 
         analystId: faker.helpers.arrayElement(actualAnalysts).id,
         comment: faker.helpers.maybe(() => faker.lorem.sentence(), {probability: 0.2})
