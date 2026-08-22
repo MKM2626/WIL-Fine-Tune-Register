@@ -120,7 +120,7 @@
     {#if !fineTune.finalised}
         <div class="mt-5">
             <h3 class="text-xl mb-2">
-                Finalised:
+                Finalise:
             </h3>
 
             <div class="bg-bg-light border border-border rounded-lg p-4 flex items-center gap-3">
@@ -135,11 +135,30 @@
 
     <div class="mt-5">
         <h3 class="text-xl mb-2">
-            Before:
+            Previous Fine Tune:
         </h3>
 
         <div class="bg-bg-light border border-border rounded-lg p-4">
             {fineTune.before}
+        </div>
+    </div>
+
+    <div class="mt-5">
+        <h3 class="text-xl mb-2">
+            {fineTune.global && !fineTune.finalised ? "Suggested Fine Tune:" : "Updated Fine Tune"}
+        </h3>
+
+        <div class="bg-bg-light border border-border rounded-lg p-4">
+            {#if fineTune.finalised}
+                {fineTune.after}
+            {:else}
+                <textarea
+                    id="after"
+                    rows="4"
+                    class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                    {...editForm.fields.after.as("text")}
+                ></textarea>
+            {/if}
         </div>
     </div>
 
@@ -162,25 +181,6 @@
 
                 {/each}
             </select>
-        </div>
-    </div>
-
-    <div class="mt-5">
-        <h3 class="text-xl mb-2">
-            After:
-        </h3>
-
-        <div class="bg-bg-light border border-border rounded-lg p-4">
-            {#if fineTune.finalised}
-                {fineTune.after}
-            {:else}
-                <textarea
-                    id="after"
-                    rows="4"
-                    class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
-                    {...editForm.fields.after.as("text")}
-                ></textarea>
-            {/if}
         </div>
     </div>
 
