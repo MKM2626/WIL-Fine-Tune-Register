@@ -201,7 +201,7 @@
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
-        Before:
+        Previous Fine Tune:
     </h3>
 
     <div class="bg-bg-light border border-border rounded-lg p-4">
@@ -225,7 +225,7 @@
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
-        After:
+        Updated Fine Tune:
     </h3>
 
     <div class="bg-bg-light border border-border rounded-lg p-4">
