@@ -173,10 +173,10 @@
 
 
     {#if selectedFineTune.global}
-        <div>
+        <div class="grid grid-cols-4 gap-x-6 gap-y-2">
             <button
                 type="button"
-                class="w-full flex items-center text-left"
+                class="col-span-4 flex items-center text-left"
                 onclick={() => expanded = !expanded}
             >
                 <span class="w-32 shrink-0 text-text-muted">
@@ -186,13 +186,13 @@
             </button>
 
             {#if expanded}
-                <div class="ml-32 mt-3 grid grid-cols-5 gap-x-6 gap-y-2">
+                <!-- <div class="ml-32 mt-3 grid grid-cols-4 gap-x-6 gap-y-2"> -->
                     {#each selectedFineTune.globals as global}
-                        <span class="min-w-0 wrap-break-words">
+                        <span class="min-w-0 wrap-break-words p-1">
                             {global.customers}
                         </span>
                     {/each}
-                </div>
+                <!-- </div> -->
             {/if}
         </div>
     {/if}
