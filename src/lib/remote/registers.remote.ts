@@ -149,7 +149,7 @@ export const editForm = form(
 
         const [finalised] = await db.select({finalsed: fine_tunes.finalised}).from(fine_tunes).where(eq(fine_tunes.id, data.id))
 
-        if (finalised || data.after == null) {
+        if (finalised.finalsed || data.after == null) {
             await db.update(fine_tunes).set({
                 comment: data.comment,
                 analystId: data.analystId
@@ -175,7 +175,8 @@ const createSchema = type({
     after: "string",
     global: "boolean = false",
     analystID: "string.numeric.parse",
-    comment: "string"
+    comment: "string",
+    finalised: "boolean = false"
 })
 export const createForm = form(
     createSchema,
@@ -190,7 +191,8 @@ export const createForm = form(
                 customerId: data.customerID, 
                 fineTune: data.after, 
                 analystId: data.analystID, 
-                comment: comment
+                comment: comment,
+                finalised: data.finalised
             }).returning({
                 id: fine_tunes.id
             })
@@ -217,14 +219,14 @@ export const createForm = form(
 
         const globalId = crypto.randomUUID()
         
-
         const [returnId] = await db.insert(fine_tunes).values({
             ruleId: data.ruleID,
             customerId: data.customerID,
             globalId: globalId,
             fineTune: data.after, 
             analystId: data.analystID, 
-            comment: comment
+            comment: comment,
+            finalised: data.finalised
         }).returning({
             id: fine_tunes.id
         })
@@ -236,10 +238,10 @@ export const createForm = form(
                 globalId: globalId,
                 fineTune: data.after, 
                 analystId: data.analystID, 
-                comment: comment
+                comment: comment,
+                finalised: data.finalised
             })
         }
-
         redirect(303, `/details/${returnId.id}`)
     }
 )
