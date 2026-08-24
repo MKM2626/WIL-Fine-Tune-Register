@@ -2,18 +2,17 @@
 	import { getDetails, deleteRow, search } from "#lib/remote/registers.remote.js";
     import { getSearchContext } from "#lib/context/search";
     import { goto } from "$app/navigation";
-	// import type { derived } from "svelte/store";
-    // import diff from 'fast-diff'
     import { diffWords } from 'diff'
+    import { fade, fly } from 'svelte/transition'
 
     let { params } = $props();
     let id =$derived(params.id);
 
     let selectedFineTune = $derived(await getDetails(id))
 
-    
     const searchInfo = getSearchContext()
 
+    // Could use with DOMPurify
     function getDiff(before: string, after: string) {
         const differences = diffWords(before, after);
 
@@ -38,9 +37,37 @@
             after: afterResult
         };
     }
+
+    function otherdiff(before: string, after: string) {
+        const differences = diffWords(before, after);
+
+        let beforeResult = []
+        let afterResult = []
+
+        for (const part of differences) {
+            if (part.removed) {
+                beforeResult.push({ type: "removed", text: part.value})
+            }
+            else if (part.added) {
+                afterResult.push({ type: "added", text: part.value})
+            }
+            else {
+                beforeResult.push({ type: "same", text: part.value})
+                afterResult.push({ type: "same", text: part.value})
+            }
+        }
+
+        return { 
+            before: beforeResult,
+            after: afterResult
+        }
+    }
+
+    // let otherDiffs = $derived(otherdiff(selectedFineTune.before, selectedFineTune.after))
     
 
     let diffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
+
     
 
 
@@ -49,7 +76,7 @@
     async function del() {
         await deleteRow(id)
         search(searchInfo).refresh()
-        goto("/test/")
+        goto("/")
     }
 </script>
 
@@ -61,14 +88,14 @@
     <div class="flex gap-3">
         <button 
             class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
-            onclick={()=> goto(`/test/edit/${id}`)}
+            onclick={()=> goto(`/edit/${id}`)}
         >
             Edit
         </button>
 
         <button 
             class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
-            onclick={()=> goto(`/test/update/${id}`)}
+            onclick={()=> goto(`/update/${id}`)}
         >
             Update
         </button>
@@ -128,6 +155,13 @@
         </span>
     </div>
 
+    <div class="flex">
+        <span class="w-32 text-text-muted">
+            Finalised: 
+        </span>
+        <input type="checkbox" checked={selectedFineTune.finalised} disabled class="checked:accent-green-800">
+    </div>
+
     <!-- colour changes when move off page, want green / red checked / not checked -->
 
     <div class="flex">
@@ -136,6 +170,7 @@
         </span>
         <input type="checkbox" checked={selectedFineTune.global} disabled class="checked:accent-green-800">
     </div>
+
 
     {#if selectedFineTune.global}
         <div>
@@ -173,12 +208,23 @@
     </h3>
 
     <div class="bg-bg-light border border-border rounded-lg p-4">
-        {@html diffs.before}
+        {#key params.id}
+            <div>{@html diffs.before}</div>
+        {/key}
+
+        <!-- transition:fly={{ y: 200, duration: 2000 }} -->
     </div>
 
-  
-    
+    <!-- <div class="bg-bg-light border border-border rounded-lg p-4">
+        {#each otherDiffs.before as diff}
+            <span class={diff.type === 'removed' ? 'text-red-500' : diff.type === 'added' ? 'text-green-500' : 'text-text'}>
+                {diff.text}
+            </span>
+        {/each}
+    </div> -->
 </div>
+
+
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
@@ -188,6 +234,15 @@
     <div class="bg-bg-light border border-border rounded-lg p-4">
         {@html diffs.after}
     </div>
+
+    
+    <!-- <div transition:fade|global class="bg-bg-light border border-border rounded-lg p-4">
+        {#each otherDiffs.after as diff}
+            <span class={diff.type === 'removed' ? 'text-red-500' : diff.type === 'added' ? 'text-green-500' : 'text-text'}>
+                {diff.text}
+            </span>
+        {/each}
+    </div> -->
 </div>
 
 <div class="mt-5">
@@ -195,7 +250,7 @@
         Comments:
     </h3>
 
-    <div class="bg-bg-light border border-border rounded-lg p-4">
+    <div class="bg-bg-light border border-border rounded-lg p-4 transition:fade">
         {selectedFineTune.comment ?? "No comment"}
     </div>
 </div>

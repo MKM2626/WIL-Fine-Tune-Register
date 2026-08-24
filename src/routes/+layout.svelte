@@ -1,5 +1,6 @@
 <script lang="ts">
     let { children } = $props();
+    import './layout.css'
     import { search } from "#lib/remote/registers.remote";
     import { goto } from "$app/navigation"
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
@@ -98,7 +99,7 @@
             <div class="flex gap-3">
                 <button 
                     class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
-                    onclick={()=>goto(`/test/create`)} 
+                    onclick={()=>goto(`/create`)} 
                 >
                     Create
                 </button>
@@ -211,7 +212,7 @@
                     class:bg-bg-light={selectedId === row.id}
                     onclick={() => {
                         selectedId = row.id;
-                        goto(`/test/details/${row.id}`);
+                        goto(`/details/${row.id}`);
                     }}
                 >
                     {row.date.toLocaleDateString()} - {row.rule} - {row.customer} - {row.technology}
