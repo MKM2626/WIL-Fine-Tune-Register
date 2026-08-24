@@ -149,9 +149,11 @@ export const editForm = form(
 
         const [finalised] = await db.select({finalsed: fine_tunes.finalised}).from(fine_tunes).where(eq(fine_tunes.id, data.id))
 
+        const comment = data.comment.trim() == "" ? null : data.comment
+        
         if (finalised.finalsed || data.after == null) {
             await db.update(fine_tunes).set({
-                comment: data.comment,
+                comment: comment,
                 analystId: data.analystId
             })
             .where(eq(fine_tunes.id, data.id))
@@ -160,7 +162,7 @@ export const editForm = form(
 
         await db.update(fine_tunes).set({
             fineTune: data.after,
-            comment: data.comment,
+            comment: comment,
             analystId: data.analystId,
             finalised: data.finalised
         })
@@ -182,7 +184,7 @@ export const createForm = form(
     createSchema,
     async (data) => {
 
-        const comment = data.comment == "" ? null : data.comment
+        const comment = data.comment.trim() == "" ? null : data.comment
 
         // If is create, and if already exists, don't create
         if (!data.global) {
