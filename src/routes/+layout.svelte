@@ -86,11 +86,17 @@
 
         }
     }
+
+     let dateValue = $state("");
+  let isFocused = $state(false);
+
+  // Dynamically evaluate the input type to trick Safari
+  let inputType = $derived(isFocused || dateValue ? "date" : "text");
 </script>
 
-<div class="flex w-screen h-screen min-w-fit overflow-hidden">
+<div class="flex w-screen min-w-fit h-screen overflow-hidden">
     
-    <div class="flex-1 w-110 min-w-95 p-8 bg-bg-dark text-text flex flex-col overflow-hidden">
+    <div class="flex-4/10 w-110 min-w-95 p-6 bg-bg-dark text-text flex flex-col overflow-hidden">
         
         <div class="flex items-center justify-between">
             <header class="text-3xl">
@@ -133,7 +139,9 @@
                                 onblur={applyStart}
                                 class="w-full px-3 py-2 bg-transparent outline-none rounded-lg text-text"> -->
 
+                            <!-- make chrome date picker icon white -->
                             <input type="date" bind:value={startInput} onblur={applyStart} class="w-full px-3 py-2 text-text">
+
                         </div>
                     </label>
 
@@ -178,6 +186,7 @@
                         class="w-11 h-10 rounded-md bg-bg text-text hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
                     >
                       clear
+                      <!-- use icon instead -->
                     </button>
                 </div>
                 
@@ -210,6 +219,8 @@
             {/each}
         </div> -->
 
+
+        <!-- Myabe make button into column, and make information different colours -->
         <div class="flex-1 overflow-y-auto flex flex-col gap-3 pt-5 border-t-4 border-border">
             {#each (await search(searchInfo)).rows as row}
                 <button
@@ -224,6 +235,8 @@
                 </button>
             {/each}
         </div>
+
+
 
         <div class="pt-5  flex items-center justify-center">
             <div class="flex items-center justify-center">
@@ -273,7 +286,7 @@
         </div>
     </div>
 
-    <div class="flex-6/10 p-8 bg-bg border-l border-border text-text overflow-hidden">
+    <div class="flex-6/10 p-6 bg-bg border-l border-border text-text overflow-y-auto">
         {@render children()}
     </div>
 </div>
