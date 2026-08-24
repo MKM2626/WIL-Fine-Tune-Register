@@ -17,5 +17,11 @@ export default defineConfig({
 				remoteFunctions: true
 			}
 		})
-	]
+	],
+	preview: { 
+		port: 10_000,
+		allowedHosts:["wil-fine-tune-register.onrender.com"]
+	} 
+
 });
+
