@@ -159,7 +159,7 @@
         <span class="w-32 text-text-muted">
             Finalised: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.finalised} disabled class="checked:accent-green-800">
+        <input type="checkbox" checked={selectedFineTune.finalised} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
     </div>
 
     <!-- colour changes when move off page, want green / red checked / not checked -->
@@ -168,34 +168,31 @@
         <span class="w-32 text-text-muted">
             Global: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.global} disabled class="checked:accent-green-800">
+        <input type="checkbox" checked={selectedFineTune.global} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
     </div>
 
 
     {#if selectedFineTune.global}
-        <div>
+        <div class="grid grid-cols-4 gap-x-6 gap-y-2">
             <button
                 type="button"
-                class="w-full flex items-center text-left"
+                class="col-span-4 flex items-center text-left"
                 onclick={() => expanded = !expanded}
             >
                 <span class="w-32 shrink-0 text-text-muted">
-                    Global Customers:
+                    {expanded ? '▲' : '▼'} Global Customers:
                 </span>
 
-                <span class="text-text-muted">
-                    {expanded ? '▲' : '▼'}
-                </span>
             </button>
 
             {#if expanded}
-                <div class="ml-32 mt-3 grid grid-cols-5 gap-x-6 gap-y-2">
+                <!-- <div class="ml-32 mt-3 grid grid-cols-4 gap-x-6 gap-y-2"> -->
                     {#each selectedFineTune.globals as global}
-                        <span class="min-w-0 wrap-break-words">
+                        <span class="min-w-0 wrap-break-words p-1">
                             {global.customers}
                         </span>
                     {/each}
-                </div>
+                <!-- </div> -->
             {/if}
         </div>
     {/if}
@@ -204,7 +201,7 @@
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
-        Before:
+        Previous Fine Tune:
     </h3>
 
     <div class="bg-bg-light border border-border rounded-lg p-4">
@@ -228,7 +225,7 @@
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
-        After:
+        Updated Fine Tune:
     </h3>
 
     <div class="bg-bg-light border border-border rounded-lg p-4">

@@ -42,7 +42,7 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         technology: result.technology,
         before: isBefore?.before ?? "Initial Rule",
         after: result.after,
-        finalised: result.finalised == null ? false : true,
+        finalised: result.finalised,
         global: result.globalId == null ? false : true,
         analystId: String(result.analystId),
         analyst: result.analyst,
@@ -58,12 +58,12 @@ export const getDetails = query(ftSchema, async (ftId) => {
         rule: rules.name,
         customerId: fine_tunes.customerId,
         customer: customers.name,
-        technologyId: customers.technologyId,
+        // technologyId: customers.technologyId,
         technology: technologies.name,
         after: fine_tunes.fineTune,
         globalId: fine_tunes.globalId,
         finalised: fine_tunes.finalised,
-        analystId: fine_tunes.analystId,
+        // analystId: fine_tunes.analystId,
         analyst: analysts.name,
         comment: fine_tunes.comment
     })
@@ -91,7 +91,7 @@ export const getDetails = query(ftSchema, async (ftId) => {
         after: result.after,
         global: result.globalId === null ? false : true,
         globals: globals,
-        finalised: result.finalised === null ? false : true,
+        finalised: result.finalised,
         // analystId: String(result.analystId),
         analyst: result.analyst,
         comment: result.comment
@@ -135,7 +135,8 @@ export const deleteRow = command(dSchema, async (ftID) => {
 
 const editSchema = type({
         id: "string.numeric.parse",
-        after: "string",
+        "after?": "string",
+        "finalised?": "boolean",
         comment: "string",
         analystId: "string.numeric.parse"
     })
@@ -146,13 +147,26 @@ export const editForm = form(
         // Need to add if finalised handler. If finalised can't change fine tune, otherwise can.
         // Would need database call
 
+        const [finalised] = await db.select({finalsed: fine_tunes.finalised}).from(fine_tunes).where(eq(fine_tunes.id, data.id))
+
+        const comment = data.comment.trim() == "" ? null : data.comment
+        
+        if (finalised.finalsed || data.after == null) {
+            await db.update(fine_tunes).set({
+                comment: comment,
+                analystId: data.analystId
+            })
+            .where(eq(fine_tunes.id, data.id))
+            redirect(303, `/details/${data.id}`)
+        }
+
         await db.update(fine_tunes).set({
             fineTune: data.after,
-            comment: data.comment,
-            analystId: data.analystId
+            comment: comment,
+            analystId: data.analystId,
+            finalised: data.finalised
         })
         .where(eq(fine_tunes.id, data.id))
-
         redirect(303, `/details/${data.id}`)
     }
 )
@@ -163,13 +177,14 @@ const createSchema = type({
     after: "string",
     global: "boolean = false",
     analystID: "string.numeric.parse",
-    comment: "string"
+    comment: "string",
+    finalised: "boolean = false"
 })
 export const createForm = form(
     createSchema,
     async (data) => {
 
-        const comment = data.comment == "" ? null : data.comment
+        const comment = data.comment.trim() == "" ? null : data.comment
 
         // If is create, and if already exists, don't create
         if (!data.global) {
@@ -178,7 +193,8 @@ export const createForm = form(
                 customerId: data.customerID, 
                 fineTune: data.after, 
                 analystId: data.analystID, 
-                comment: comment
+                comment: comment,
+                finalised: data.finalised
             }).returning({
                 id: fine_tunes.id
             })
@@ -205,14 +221,14 @@ export const createForm = form(
 
         const globalId = crypto.randomUUID()
         
-
         const [returnId] = await db.insert(fine_tunes).values({
             ruleId: data.ruleID,
             customerId: data.customerID,
             globalId: globalId,
             fineTune: data.after, 
             analystId: data.analystID, 
-            comment: comment
+            comment: comment,
+            finalised: data.finalised
         }).returning({
             id: fine_tunes.id
         })
@@ -224,10 +240,10 @@ export const createForm = form(
                 globalId: globalId,
                 fineTune: data.after, 
                 analystId: data.analystID, 
-                comment: comment
+                comment: comment,
+                finalised: data.finalised
             })
         }
-
         redirect(303, `/details/${returnId.id}`)
     }
 )
