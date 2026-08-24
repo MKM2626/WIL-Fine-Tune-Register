@@ -1,6 +1,6 @@
 <script lang="ts">
     let { children } = $props();
-    import { testSearch } from "#lib/remote/registers.remote";
+    import { search } from "#lib/remote/registers.remote";
     import { goto } from "$app/navigation"
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
 
@@ -9,7 +9,7 @@
 
     let searchInfo = $state<SearchInfo>({ page: 1, pageSize: 12, descending: true})
 
-    let selectedId = $state('')
+    let selectedId = $state()
 
     setSearchContext(searchInfo)
 
@@ -19,7 +19,7 @@
     let endInput = $state('')
     let pageInput = $state(1);
     
-    let results = $derived(await testSearch(searchInfo))
+    let results = $derived(await search(searchInfo))
 
     function clearDate() {
         startInput = ''
@@ -205,7 +205,7 @@
         </div> -->
 
         <div class="flex-1 overflow-y-auto flex flex-col gap-3 pt-5 border-t-4 border-border">
-            {#each (await testSearch(searchInfo)).rows as row}
+            {#each (await search(searchInfo)).rows as row}
                 <button
                     class="py-5 bg-bg rounded-lg border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end"
                     class:bg-bg-light={selectedId === row.id}

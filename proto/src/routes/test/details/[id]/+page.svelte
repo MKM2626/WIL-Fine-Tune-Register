@@ -1,18 +1,17 @@
 <script lang="ts">
-	import { getFineTune, deleteRow, testSearch, getGlobals } from "#lib/remote/registers.remote.js";
+	import { getDetails, deleteRow, search } from "#lib/remote/registers.remote.js";
     import { getSearchContext } from "#lib/context/search";
     import { goto } from "$app/navigation";
-	import type { derived } from "svelte/store";
+	// import type { derived } from "svelte/store";
     // import diff from 'fast-diff'
     import { diffWords } from 'diff'
 
     let { params } = $props();
     let id =$derived(params.id);
 
-    let selectedFineTune = $derived(await getFineTune(id))
+    let selectedFineTune = $derived(await getDetails(id))
 
-    let globals = $derived(selectedFineTune.global ? await getGlobals(selectedFineTune.globalId!) : null)
-
+    
     const searchInfo = getSearchContext()
 
     function getDiff(before: string, after: string) {
@@ -39,14 +38,17 @@
             after: afterResult
         };
     }
+    
 
     let diffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
     
+
+
     let expanded = $state(false);
 
     async function del() {
         await deleteRow(id)
-        testSearch(searchInfo).refresh()
+        search(searchInfo).refresh()
         goto("/test/")
     }
 </script>
@@ -135,38 +137,6 @@
         <input type="checkbox" checked={selectedFineTune.global} disabled class="checked:accent-green-800">
     </div>
 
-    <!-- Can't get it to space evenly  -->
-
-    <!-- {#if selectedFineTune.global}
-        <div class="flex">
-            <span class="w-32 text-text-muted">
-                Global Customers:
-            </span>
-            <div class="justify-">
-                {#each globals as global}
-                    <span>
-                        {global.customers}
-                    </span>
-                {/each}
-            </div>
-            
-        </div>
-    {/if} -->
-
-    <!-- <div class="flex min-w-0">
-        <span class="w-32 shrink-0 text-text-muted">
-            Global Customers:
-        </span>
-
-        <div class="flex flex-1 min-w-0 flex-wrap gap-x-6 gap-y-2">
-            {#each globals as global}
-                <span>
-                    {global.customers}
-                </span>
-            {/each}
-        </div>
-    </div> -->
-
     {#if selectedFineTune.global}
         <div>
             <button
@@ -185,7 +155,7 @@
 
             {#if expanded}
                 <div class="ml-32 mt-3 grid grid-cols-5 gap-x-6 gap-y-2">
-                    {#each globals as global}
+                    {#each selectedFineTune.globals as global}
                         <span class="min-w-0 wrap-break-words">
                             {global.customers}
                         </span>

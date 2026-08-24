@@ -1,5 +1,5 @@
 import * as schema from '../src/lib/db/schema.ts';
-import { faker } from '@faker-js/faker';
+import { fa, faker } from '@faker-js/faker';
 import { db } from "../src/lib/db/index.ts"
 
 
@@ -22,7 +22,7 @@ for (let i = 0; i <2; i++) {
 const actualTechnologies = await db.insert(schema.technologies).values(mockTech).returning()
 
 const mockCustomers: (typeof schema.customers.$inferInsert) []= [];
-for (let i = 0; i <50; i++) {
+for (let i = 0; i <20; i++) {
     mockCustomers.push({
         name: faker.commerce.productName(),
         technologyId: faker.helpers.arrayElement(actualTechnologies).id,
@@ -43,17 +43,60 @@ const actualAnalysts = await db.insert(schema.analysts).values(mockAnalysts).ret
 
 const mockFineTunes: (typeof schema.fine_tunes.$inferInsert) []= [];
 for (let i = 0; i <10; i++) {
+
     mockFineTunes.push({
         ruleId: faker.helpers.arrayElement(actualRules).id,
         date: faker.date.anytime(),
         customerId: faker.helpers.arrayElement(actualCustomers).id,
-        before: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
-        after: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
+        
+        fineTune: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
+       
+        finalised: faker.helpers.maybe(() => true, {probability: 0.7}),
+
         analystId: faker.helpers.arrayElement(actualAnalysts).id,
         comment: faker.helpers.maybe(() => faker.lorem.sentence(), {probability: 0.2})
     })
 }
 
-
 await db.insert(schema.fine_tunes).values(mockFineTunes)
+
+
+
+
+
+const shuffleRules = faker.helpers.shuffle([...actualRules])
+const mockGoldenRules: (typeof schema.golden_rules.$inferInsert) []=[]
+for (let i = 0; i <5; i++) {
+
+    // let primaryCrit = faker.location.country()
+    const uniqueRule = shuffleRules.pop()
+    mockGoldenRules.push({
+        ruleId: uniqueRule?.id, 
+        
+        fineTune: faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'),
+
+        analystId: faker.helpers.arrayElement(actualAnalysts).id,
+        comment: faker.helpers.maybe(() => faker.lorem.sentence(), {probability: 0.2})
+
+    })
+}
+
+
+
+const mockDrafts: (typeof schema.drafts.$inferInsert) [] = []
+for (let i = 0; i <5; i++) {
+    
+    // let primaryCrit = faker.location.country()
+    mockDrafts.push({
+        ruleId: faker.helpers.arrayElement(actualRules).id,
+        date: faker.date.anytime(),
+        customerId: faker.helpers.arrayElement(actualCustomers).id,
+        
+        fineTune: faker.helpers.maybe(() => faker.helpers.fake( 'Rule: {{person.firstName}} must not exceed {{number.int}} limits.'), {probability: 0.5}),
+
+        analystId: faker.helpers.arrayElement(actualAnalysts).id,
+        comment: faker.helpers.maybe(() => faker.lorem.sentence(), {probability: 0.2})
+    })
+}
+
 
