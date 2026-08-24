@@ -224,14 +224,21 @@
         <div class="flex-1 overflow-y-auto flex flex-col gap-3 pt-5 border-t-4 border-border">
             {#each (await search(searchInfo)).rows as row}
                 <button
-                    class="py-5 bg-bg rounded-lg border border-border text-wrap hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end"
+                    class="p-5 bg-bg rounded-lg border border-border text-wrap text-left hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end"
                     class:bg-bg-light={selectedId === row.id}
                     onclick={() => {
                         selectedId = row.id;
                         goto(`/details/${row.id}`);
                     }}
                 >
-                    {row.date.toLocaleDateString()} - {row.rule} - {row.customer} - {row.technology}
+                    <!-- <span>{row.date.toLocaleDateString()} - {row.rule} - {row.customer} - {row.technology}</span> -->
+                    <div class="grid grid-rows-4">
+                        <div class="text-lg flex justify-between">{row.date.toLocaleDateString()} {row.rule}</div>  
+                        <!-- <span class="text">{row.rule}</span>   -->
+                        <span class="text-sm">{row.customer}</span>  
+                        <span class="text-sm">{row.technology}</span>
+                    </div>
+                   
                 </button>
             {/each}
         </div>
