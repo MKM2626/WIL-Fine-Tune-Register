@@ -2,15 +2,24 @@
 	import { getDetails, deleteRow, search } from "#lib/remote/registers.remote.js";
     import { getSearchContext } from "#lib/context/search";
     import { goto } from "$app/navigation";
-    import { diffWords } from 'diff'
-    import { fade, fly } from 'svelte/transition'
+    import { diffWords } from 'diff';
+    import { fade, fly, slide } from 'svelte/transition';
+    // import { showToast } from '#lib/components/toast.svelte.js';
+    import { toast } from '#lib/components/toast.svelte.js'
 
     let { params } = $props();
     let id =$derived(params.id);
 
+    const moveIn = 250;
+    const moveOut = 250;
+    const delay = 250;
+
     let selectedFineTune = $derived(await getDetails(id))
 
     const searchInfo = getSearchContext()
+
+    let deleting = $state(false)
+    let expanded = $state(false);
 
     // Could use with DOMPurify
     function getDiff(before: string, after: string) {
@@ -64,19 +73,27 @@
     }
 
     // let otherDiffs = $derived(otherdiff(selectedFineTune.before, selectedFineTune.after))
-    
-
     let diffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
 
-    
-
-
-    let expanded = $state(false);
 
     async function del() {
-        await deleteRow(id)
-        search(searchInfo).refresh()
-        goto("/")
+        if (deleting) return 
+
+        deleting = true
+
+
+        try {
+            await deleteRow(id)
+            search(searchInfo).refresh()
+            toast.send('Deleted')
+            goto("/")
+        }
+        catch (error) {
+            toast.send(error instanceof Error ? error.message : "Failed to delete", "error")
+        }
+       finally {
+            deleting=false
+       }
     }
 </script>
 
@@ -87,80 +104,103 @@
 
     <div class="flex gap-3">
         <button 
-            class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/edit/${id}`)}
         >
             Edit
         </button>
 
         <button 
-            class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/update/${id}`)}
         >
             Update
         </button>
 
         <button 
-            class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+
+            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=>del()}
+            disabled={deleting}
         >
             Delete
         </button>
     </div>
 </div>
 
-<div class="bg-bg-light border border-border rounded-lg p-5 flex flex-col gap-3">
+
+
+<div class="bg-bg-light rounded-lg p-5 flex flex-col gap-3 overflow-hidden">
     <div class="flex">
         <span class="w-32 text-text-muted">
             Date:
         </span>
-        <span>
-            {selectedFineTune.date.toLocaleDateString()}
-        </span>
+        {#key params.id}
+
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {selectedFineTune.date.toLocaleDateString()}
+            </span>
+
+            
+        {/key}
     </div>
 
     <div class="flex">
         <span class="w-32 text-text-muted">
             Rule:
         </span>
-        <span>
-            {selectedFineTune.rule}
-        </span>
+        {#key params.id}
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {selectedFineTune.rule}
+            </span>
+        {/key}
+            
     </div>
 
         <div class="flex">
         <span class="w-32 text-text-muted">
             Customer:
         </span>
-        <span>
-            {selectedFineTune.customer}
-        </span>
+        {#key params.id}
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {selectedFineTune.customer}
+            </span>
+        {/key}
+
+        
     </div>
 
     <div class="flex">
         <span class="w-32 text-text-muted">
             Technology:
         </span>
-        <span>
-            {selectedFineTune.technology}
-        </span>
+        {#key params.id}
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {selectedFineTune.technology}
+            </span>
+        {/key}
     </div>
 
     <div class="flex">
         <span class="w-32 text-text-muted">
             Analyst:
         </span>
-        <span>
-            {selectedFineTune.analyst}
-        </span>
+        {#key params.id}
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {selectedFineTune.analyst}
+            </span>
+        {/key}
     </div>
 
     <div class="flex">
         <span class="w-32 text-text-muted">
             Finalised: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.finalised} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+        {#key params.id}
+            <input type="checkbox" checked={selectedFineTune.finalised} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+        {/key}
     </div>
+        
 
     <!-- colour changes when move off page, want green / red checked / not checked -->
 
@@ -168,49 +208,44 @@
         <span class="w-32 text-text-muted">
             Global: 
         </span>
-        <input type="checkbox" checked={selectedFineTune.global} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+        {#key params.id}
+            <input type="checkbox" checked={selectedFineTune.global} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+        {/key}
     </div>
-
-
+        
     {#if selectedFineTune.global}
-        <div class="grid grid-cols-4 gap-x-6 gap-y-2">
+        <div class="bg-bg-light">
             <button
                 type="button"
-                class="col-span-4 flex items-center text-left"
+                class="pl-4 pr-5 py-2 bg-bg border-2 rounded-lg border-border hover:border-indigo-500"
                 onclick={() => expanded = !expanded}
             >
-                <span class="w-32 shrink-0 text-text-muted">
+                <span>
                     {expanded ? '▲' : '▼'} Global Customers:
                 </span>
-
             </button>
 
             {#if expanded}
-                <!-- <div class="ml-32 mt-3 grid grid-cols-4 gap-x-6 gap-y-2"> -->
-                    {#each selectedFineTune.globals as global}
-                        <span class="min-w-0 wrap-break-words p-1">
-                            {global.customers}
-                        </span>
-                    {/each}
-                <!-- </div> -->
+                <div 
+                    transition:slide={{ duration: 400}}
+                    class="overflow-hidden"
+                >
+                    <div class="mt-2 bg-bg-light rounded-lg grid grid-cols-4 gap-2">
+                        {#each selectedFineTune.globals as global}
+                            <!-- in futer click on to take to same rule of that customer -->
+                            <button 
+                                class="wrap-break-words text-wrap py-2 px-2 text-center bg-bg border border-border hover:border-indigo-500 rounded-lg"
+                            >
+                                {global.customers}
+                            </button>
+                        {/each}
+                    </div>
+                    
+                </div>
             {/if}
         </div>
     {/if}
-    
 </div>
-
-<div class="mt-5">
-    <h3 class="text-xl mb-2">
-        Previous Fine Tune:
-    </h3>
-
-    <div class="bg-bg-light border border-border rounded-lg p-4">
-        {#key params.id}
-            <div>{@html diffs.before}</div>
-        {/key}
-
-        <!-- transition:fly={{ y: 200, duration: 2000 }} -->
-    </div>
 
     <!-- <div class="bg-bg-light border border-border rounded-lg p-4">
         {#each otherDiffs.before as diff}
@@ -219,27 +254,36 @@
             </span>
         {/each}
     </div> -->
+
+<div class="mt-5">
+    <h3 class="text-xl mb-2">
+        Previous Fine Tune:
+    </h3>
+
+
+    {#key params.id}
+        <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light rounded-lg p-4">
+            {@html diffs.before}
+        </div>
+    {/key}
+
+
 </div>
-
-
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
         Updated Fine Tune:
     </h3>
 
-    <div class="bg-bg-light border border-border rounded-lg p-4">
-        {@html diffs.after}
-    </div>
+
+        {#key params.id}
+            <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light  rounded-lg p-4">
+                {@html diffs.after}
+            </div>
+        {/key}
+
 
     
-    <!-- <div transition:fade|global class="bg-bg-light border border-border rounded-lg p-4">
-        {#each otherDiffs.after as diff}
-            <span class={diff.type === 'removed' ? 'text-red-500' : diff.type === 'added' ? 'text-green-500' : 'text-text'}>
-                {diff.text}
-            </span>
-        {/each}
-    </div> -->
 </div>
 
 <div class="mt-5">
@@ -247,7 +291,10 @@
         Comments:
     </h3>
 
-    <div class="bg-bg-light border border-border rounded-lg p-4 transition:fade">
-        {selectedFineTune.comment ?? "No comment"}
-    </div>
+    {#key params.id}
+        <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light  rounded-lg p-4 transition:fade">
+            {selectedFineTune.comment ?? "No comment"}
+        </div>
+     {/key}
+
 </div>
