@@ -8,6 +8,7 @@ export interface SearchInfo {
         descending: boolean,
         start?: Date,
         end?: Date
+        finalised?: boolean,
     }
 
 export const [getSearchContext, setSearchContext] = createContext<SearchInfo>();
