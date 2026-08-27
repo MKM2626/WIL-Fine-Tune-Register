@@ -10,9 +10,9 @@
     let { params } = $props();
     let id =$derived(params.id);
 
-    const moveIn = 250;
-    const moveOut = 250;
-    const delay = 250;
+    const moveOut = 200;
+    const delay = 200;
+    const moveIn = 200;
 
     let selectedFineTune = $derived(await getDetails(id))
 
@@ -104,14 +104,14 @@
 
     <div class="flex gap-3">
         <button 
-            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/edit/${id}`)}
         >
             Edit
         </button>
 
         <button 
-            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/update/${id}`)}
         >
             Update
@@ -119,7 +119,7 @@
 
         <button 
 
-            class="w-25 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=>del()}
             disabled={deleting}
         >
@@ -259,42 +259,37 @@
     <h3 class="text-xl mb-2">
         Previous Fine Tune:
     </h3>
-
-
-    {#key params.id}
-        <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light rounded-lg p-4">
-            {@html diffs.before}
-        </div>
-    {/key}
-
-
+    <div class="bg-bg-light rounded-lg p-4">
+        {#key params.id}
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+                {@html diffs.before} 
+            </span>
+        {/key}
+    </div>
 </div>
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
         Updated Fine Tune:
     </h3>
-
-
+    <div class="bg-bg-light  rounded-lg p-4">
         {#key params.id}
-            <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light  rounded-lg p-4">
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {@html diffs.after}
-            </div>
+            </span>
         {/key}
-
-
-    
+    </div>
 </div>
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
         Comments:
     </h3>
-
-    {#key params.id}
-        <div in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="bg-bg-light  rounded-lg p-4 transition:fade">
-            {selectedFineTune.comment ?? "No comment"}
-        </div>
-     {/key}
-
+    <div class="bg-bg-light  rounded-lg p-4 transition:fade">
+        {#key params.id}   
+            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} >
+                {selectedFineTune.comment ?? "No comment"}
+            </span>
+        {/key}  
+    </div>
 </div>
