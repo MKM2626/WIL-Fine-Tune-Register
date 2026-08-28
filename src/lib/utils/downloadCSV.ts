@@ -17,7 +17,7 @@ export async function downloadCSV(searchInfo: SearchInfo) {
     let filename = searchInfo.search ? [data.date, ruleOrCustomer].filter(value => value !== null && value !== undefined && value !== '').join(' | ') : [data.date,`All Fine Tune`].filter(value => value !== null && value !== undefined && value !== '').join(' | ')
 
     let headers = Object.keys(data.rows[0]) as Array<keyof typeof data.rows[0]>
-    let escapeCSV = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`
+    const escapeCSV = (value: Date | string | null) => value === null ? `"${String(value).replace(/"/g, '""')}"` : ''
     let csvRows = data.rows.map(row => 
         headers.map(header => escapeCSV(row[header])).join(',')
     );
