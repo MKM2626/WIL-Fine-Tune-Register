@@ -5,7 +5,7 @@
     import { goto } from "$app/navigation"
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
     import  Toast  from '#lib/components/Toast.svelte'
-    import { downloadCSV } from '#lib/downloadCSV';
+    import { downloadCSV } from '#lib/utils/downloadCSV';
 
 
     // The results from call
