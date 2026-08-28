@@ -41,6 +41,7 @@
 	"dependencies": {
 		"@libsql/client": "^0.17.4",
 		"arktype": "^2.2.3",
+		"better-auth": "^1.7.1",
 		"diff": "^9.0.0",
 		"dotenv": "^17.4.2",
 		"drizzle-kit": "1.0.0-rc.4",
