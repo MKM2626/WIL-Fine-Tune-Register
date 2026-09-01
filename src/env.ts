@@ -7,5 +7,9 @@ export const variables = defineEnvVars({
     DB_FILE_NAME: {},
 
     BETTER_AUTH_SECRET: {},
-    BETTER_AUTH_BASE_URL: {}
+    BETTER_AUTH_BASE_URL: {},
+
+    BETTER_AUTH_TRUSTED_ORIGINS: {},
+
+    ORGANISATION: {}
 })
