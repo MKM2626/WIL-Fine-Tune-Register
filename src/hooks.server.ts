@@ -1,4 +1,4 @@
-import { auth } from "#lib/auth";
+import { auth } from "#lib/server/auth";
 import type { Handle } from '@sveltejs/kit'
 import { svelteKitHandler } from 'better-auth/svelte-kit'
 import { building } from "$app/env"; // Unsure if it should be set to enviroment
@@ -10,8 +10,10 @@ export const handle: Handle = async ({event, resolve}) => {
 
     if (session) {
         event.locals.session = session.session;
-        event.locals.user = session.user
+        event.locals.user = session.user;
+        console.log(event.locals.session.token)
     }
 
     return svelteKitHandler({event, resolve, auth, building})
 }
+
