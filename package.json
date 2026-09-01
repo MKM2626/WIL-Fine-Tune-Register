@@ -13,9 +13,11 @@
 		"lint": "prettier --check .",
 		"createTry": "pnpm install && pnpm drizzle-kit push && pnpm run db:seeder && pnpm run build",
 		"format": "prettier --write .",
+		"query": "pnpm exec node --experimental-strip-types scripts/query.ts",
 		"db:seeder": "pnpm exec node --experimental-strip-types scripts/seeder.ts",
 		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts",
-		"db:reset": "pnpm run db:clean && pnpm run db:seeder"
+		"db:reset": "pnpm run db:clean && pnpm run db:seeder",
+		"auth:schema": "auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^10.5.0",
@@ -24,6 +26,8 @@
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"@tailwindcss/vite": "^4.3.0",
 		"add": "^2.0.9",
+		"auth": "^1.6.23",
+		"better-auth": "^1.6.23",
 		"prettier": "^3.8.3",
 		"prettier-plugin-svelte": "^4.1.0",
 		"prettier-plugin-tailwindcss": "^0.8.0",
