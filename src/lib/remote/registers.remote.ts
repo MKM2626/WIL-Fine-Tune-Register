@@ -1,10 +1,10 @@
 import { query, form, command } from "$app/server";
 import { error, redirect } from '@sveltejs/kit';
 import { type } from "arktype"
-import { db } from '#lib/db'
-import { analysts, customers, fine_tunes, technologies, rules} from "#lib/db/schema";
+import { db } from '#lib/server/db/index'
+import { analysts, customers, fine_tunes, technologies, rules} from "#lib/server/db/schema";
 import { eq, and, gt, asc, desc, like, notLike, lt, count, or, gte, lte, sql, ne } from 'drizzle-orm'
-import { boolean } from "drizzle-orm/cockroach-core/columns/bool";
+
 
 
 const ftSchema = type("string.numeric.parse")
