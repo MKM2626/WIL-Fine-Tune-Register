@@ -1,3 +1,0 @@
-<scrip lang="ts">
-    
-</scrip>
