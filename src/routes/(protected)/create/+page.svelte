@@ -4,7 +4,9 @@
 	import { goto } from "$app/navigation";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
-    
+    import { authClient } from '#lib/auth-client'
+
+    const session = authClient.useSession() 
 
     const searchInfo = getSearchContext()
 
@@ -114,19 +116,20 @@
     </div>
 
 
+    {#if $session.data?.user.teams.includes('admin') || $session.data?.user.teams.includes('senior')}
+        <div class="mt-5">
+            <h3 class="text-xl mb-2">
+                Global
+            </h3>
 
-    <div class="mt-5">
-        <h3 class="text-xl mb-2">
-            Global
-        </h3>
-
-        <div class="flex items-center gap-3 bg-bg-light rounded-lg border-2 border-border outline-none hover:border-action transition-all duration-250 ease-out p-4">
-            <input id="global" {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
-            <label for="global" class="text-text-muted">
-                Will apply to all customers using this technology
-            </label>
+            <div class="bg-bg-light rounded-lg p-4 flex items-center gap-3">
+                <input {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
+                <label for="global" >
+                    Will apply to all customers using this technology
+                </label>
+            </div>
         </div>
-    </div>
+    {/if}
 
     <div class="mt-5">
         <h3 class="text-xl mb-2">
