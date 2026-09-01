@@ -5,7 +5,8 @@
 // import { url } from 'arktype/internal/keywords/string.ts';
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql';
+import { DB_FILE_NAME } from '$app/env/private'
 
-const client = createClient({ url: 'file:local.db' })
+const client = createClient({ url: DB_FILE_NAME })
 
 export const db = drizzle({client})
