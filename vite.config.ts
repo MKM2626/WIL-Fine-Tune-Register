@@ -14,7 +14,7 @@ export default defineConfig({
 			},
 			adapter: adapter(),
 			experimental: {
-				remoteFunctions: true,
+				remoteFunctions: true
 			}
 		})
 	],
