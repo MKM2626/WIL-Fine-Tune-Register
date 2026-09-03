@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth"
 import { sveltekitCookies } from "better-auth/svelte-kit"
 // import { getRequest } from "@sveltejs/kit/node"
+import { error } from '@sveltejs/kit'
 import { getRequestEvent } from "$app/server"
 import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BETTER_AUTH_TRUSTED_ORIGINS, ORGANISATION } from '$app/env/private'
 
@@ -44,51 +45,41 @@ export const auth = betterAuth({
             scope: ["user:email", "read:org"],
 
             getUserInfo: async (token) => {
-                console.log(token)
+                const headers = { 
+                    headers: {
+                        Authorization: `Bearer ${token.accessToken}`,
+                        Accept: "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2026-03-10"
+                    }
+                }
 
                 const userResponse = await fetch( 
-                    "https://api.github.com/user",
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token.accessToken}`,
-                            Accept: "application/vnd.github+json",
-                            "X-GitHub-Api-Version": "2026-03-10"
-                        }
-                    }
+                    "https://api.github.com/user", 
+                    headers
                 )
 
                 if (!userResponse.ok) {
-                    throw new Error(
-                        `GitHub /user failed: ${userResponse.status}`
-                    );
+                    error(404, "Your profile does not exist")
                 }
 
                 const profile = await userResponse.json();
 
-                async function isTeamMember(teamSlug: string) {
-                    const response = await fetch(
-                        `https://api.github.com/orgs/${ORGANISATION}/teams/${teamSlug}/memberships/${profile.login}`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token.accessToken}`,
-                                Accept: "application/vnd.github+json",
-                                "X-GitHub-Api-Version": "2026-03-10"
-                            }
-                        }
-                    );
+                const teamNames = ["Admin", "Senior", "Junior"];
 
-                    return response.ok;
-                }
+                const teams = (
+                    await Promise.all(
+                        teamNames.map(async (team) => {
+                            const response = await fetch(
+                                `https://api.github.com/orgs/${ORGANISATION}/teams/${team}/memberships/${profile.login}`,
+                                headers
+                            );
 
-                const isAdmin = await isTeamMember("Admin");
-                const isSenior = await isTeamMember("Senior");
-                const isJunior = await isTeamMember("Junior");
+                            return response.ok ? team.toLowerCase() : null;
+                        })
+                    )
+                ).filter((team): team is string => team !== null);
 
-                const teams: string[] = [];
-
-                if (isAdmin) {teams.push("admin")}
-                if (isSenior) {teams.push("senior")}
-                if (isJunior) {teams.push("junior")}
+                console.log(teams)
 
                 return {
                     user: {
