@@ -1,8 +1,5 @@
 import { createContext } from "svelte";
-import { type } from 'arktype'
 
-
-// Should use arktype
 export interface SearchInfo { 
         search?: string[], 
         page: number, 
