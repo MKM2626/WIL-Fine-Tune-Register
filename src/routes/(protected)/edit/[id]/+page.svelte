@@ -5,6 +5,7 @@
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from "#lib/components/comboBox.svelte"
 
+
     const searchInfo = getSearchContext()
 
     let { params } = $props();
@@ -46,7 +47,7 @@
             <button
                 type="button"
                 onclick={()=>goto(`/details/${params.id}`)}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Cancel
             </button>
@@ -54,7 +55,7 @@
             <button
                 type="submit"
                 onclick={()=>submit()}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:brightness-125 transition-all duration-250 ease-out"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Save
             </button>
@@ -141,7 +142,7 @@
                 Finalise:
             </h3>
 
-            <div class="p-4 bg-bg-light border-2 border-border rounded-lg hover:border-action transition-all duration-250 ease-out flex items-center gap-3">
+            <div class="p-4 bg-bg-light  rounded-lg  flex items-center gap-3">
                 <input {...editForm.fields.finalised.as("checkbox")} class="appearance-none h-5 w-5 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>  
                 <label for='finalised' class="text-text-muted">
                     Once finalised, you won't be able to edit the fine tune.
