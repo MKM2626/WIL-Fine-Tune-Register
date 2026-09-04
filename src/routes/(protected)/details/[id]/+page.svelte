@@ -6,6 +6,8 @@
     import { fade, fly, slide } from 'svelte/transition';
     import { toast } from '#lib/components/toast.svelte.js'
     import { authClient } from '#lib/auth-client'
+    // import { getIsDelete } from "#lib/context/deleteNextDetail";
+    // import { getSelectedId } from "#lib/context/selectedId"
 
     const session = authClient.useSession() 
 
@@ -16,40 +18,18 @@
     const delay = 200;
     const moveIn = 200;
 
-    let selectedFineTune = $derived(await getDetails(id))
-
+    // const isDelete = getIsDelete()
     const searchInfo = getSearchContext()
+    // const selectedId = getSelectedId()
+
+
+    let selectedFineTune = $derived(await getDetails(id))
+    
 
     let deleting = $state(false)
     let expanded = $state(false);
 
-    // Could use with DOMPurify
     function getDiff(before: string, after: string) {
-        const differences = diffWords(before, after);
-
-        let beforeResult = '';
-        let afterResult = '';
-
-        for (const part of differences) {
-            if (part.removed) {
-                beforeResult += `<span class="text-red-500">${part.value}</span>`;
-            } 
-            else if (part.added) {
-                afterResult += `<span class="text-green-500">${part.value}</span>`;
-            } 
-            else {
-                beforeResult += part.value;
-                afterResult += part.value;
-            }
-        }
-
-        return {
-            before: beforeResult,
-            after: afterResult
-        };
-    }
-
-    function otherdiff(before: string, after: string) {
         const differences = diffWords(before, after);
 
         let beforeResult = []
@@ -57,13 +37,13 @@
 
         for (const part of differences) {
             if (part.removed) {
-                beforeResult.push({ type: "removed", text: part.value})
+                beforeResult.push({ class: "text-red-50", text: part.value})
             }
             else if (part.added) {
-                afterResult.push({ type: "added", text: part.value})
+                afterResult.push({ class: "text-green-500", text: part.value})
             }
             else {
-                beforeResult.push({ type: "same", text: part.value})
+                beforeResult.push({ class: "text-text", text: part.value})
                 afterResult.push({ type: "same", text: part.value})
             }
         }
@@ -74,8 +54,8 @@
         }
     }
 
-    // let otherDiffs = $derived(otherdiff(selectedFineTune.before, selectedFineTune.after))
-    let diffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
+    let otherDiffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
+
 
 
     async function del() {
@@ -85,10 +65,10 @@
         deleting = true
 
         try {
+            // isDelete.bool = true
             await deleteRow(id)
             search(searchInfo).refresh()
             toast.send('Deleted')
-            goto("/")
         }
         catch (error) {
             toast.send(error instanceof Error ? error.message : "Failed to delete", "error")
@@ -106,14 +86,14 @@
 
     <div class="flex gap-3">
         <button 
-            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+            class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/edit/${id}`)}
         >
             Edit
         </button>
 
         <button 
-            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+            class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
             onclick={()=> goto(`/update/${id}`)}
         >
             Update
@@ -121,7 +101,7 @@
 
         {#if $session.data?.user.teams.includes('admin')}
             <button 
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
                 onclick={()=>del()}
                 disabled={deleting}
             >
@@ -204,9 +184,6 @@
             <input type="checkbox" checked={selectedFineTune.finalised} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         {/key}
     </div>
-        
-
-    <!-- colour changes when move off page, want green / red checked / not checked -->
 
     <div class="flex">
         <span class="w-32 text-text-muted">
@@ -251,13 +228,6 @@
     {/if}
 </div>
 
-    <!-- <div class="bg-bg-light border border-border rounded-lg p-4">
-        {#each otherDiffs.before as diff}
-            <span class={diff.type === 'removed' ? 'text-red-500' : diff.type === 'added' ? 'text-green-500' : 'text-text'}>
-                {diff.text}
-            </span>
-        {/each}
-    </div> -->
 
 <div class="mt-5">
     <h3 class="text-xl mb-2">
@@ -265,9 +235,9 @@
     </h3>
     <div class="bg-bg-light rounded-lg p-4">
         {#key params.id}
-            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
-                {@html diffs.before} 
-            </span>
+            {#each otherDiffs.before as diff}
+                <span class={diff.class}>{diff.text}</span>
+            {/each}
         {/key}
     </div>
 </div>
@@ -278,9 +248,9 @@
     </h3>
     <div class="bg-bg-light  rounded-lg p-4">
         {#key params.id}
-            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
-                {@html diffs.after}
-            </span>
+            {#each otherDiffs.after as diff}
+                <span class={diff.class}>{diff.text}</span>
+            {/each}
         {/key}
     </div>
 </div>
