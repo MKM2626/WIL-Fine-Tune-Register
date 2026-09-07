@@ -8,6 +8,7 @@
     import { authClient } from '#lib/auth-client'
     // import { setIsDelete, type IsDelete } from '#lib/context/deleteNextDetail'
     import { onMount } from "svelte";
+	import { SvelteSet } from "svelte/reactivity";
 
     const session = authClient.useSession() 
 
@@ -27,7 +28,7 @@
     let endInput = $state('')
     let pageInput = $state(1);
     
-    let results = $derived(search({...searchInfo}))
+    let results = $derived(search(searchInfo))
 
     onMount(() => {
         if (results.current) {
@@ -70,12 +71,12 @@
         if (!search) return 
 
         if (!searchInfo.search) {
-            searchInfo.search = []
+            searchInfo.search = new SvelteSet<string>()
         }
 
         // const currentSearch = searchInfo.search ?? [];
-        if (!searchInfo.search.includes(search)) {
-            searchInfo.search.push(search)
+        if (!searchInfo.search.has(search)) {
+            searchInfo.search.add(search)
             // searchInfo = {
             //     ...searchInfo,
             //     search: [...currentSearch, searchVal],
@@ -92,11 +93,13 @@
     function removeSearch(search: string) {
         if (!searchInfo.search) return;
 
-        searchInfo.search = searchInfo.search.filter(
-            (item) => item !== search
-        );
+        // searchInfo.search = searchInfo.search.filter(
+        //     (item) => item !== search
+        // );
 
-        if (searchInfo.search.length === 0) {
+        searchInfo.search.delete(search)
+
+        if (searchInfo.search.size === 0) {
             delete searchInfo.search;
         }
 
@@ -211,20 +214,20 @@
         
 
         <div class="pt-5 flex flex-col gap-5">
-            <div class="flex justify-between">
-                <div class="flex flex-wrap gap-4">
-                    <div class="flex flex-1 items-start justify-between gap-x-10">
-                        <span class="shrink-0  text-text">From:</span>
+            <div class="flex gap-x-4">
+                <div class="flex grow items-start flex-wrap gap-4">
+                    <div class="flex grow justify-between gap-4">
+                        <span class="text-text">From:</span>
                         <input type="date" bind:value={startInput} onblur={applyStart} class="full-w min-w-0 px-3 py-2 text-text bg-bg-light border-2 border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
                     </div>
 
-                    <div class="flex flex-1 items-start justify-between gap-x-10">
-                        <span class="shrink-0 text-text">To:</span>
+                    <div class="flex grow justify-between gap-4">
+                        <span class="text-text">To:</span>
                         <input type="date" bind:value={endInput} onblur={applyEnd} class="full-w min-w-0 px-3 py-2 text-text bg-bg-light border-2 border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
                     </div>
                 </div>
 
-                <div class="flex shrink flex-wrap justify-end gap-y-4 gap-x-4">
+                <div class="flex  flex-wrap justify-end gap-y-4 gap-4">
                     <button
                         type="button"
                         onclick={() => searchInfo.descending = !searchInfo.descending}
@@ -268,7 +271,7 @@
                     </button>
                 </div>
 
-                {#if searchInfo.search?.length} 
+                {#if (searchInfo.search?.size ?? 0) > 0} 
                     <div class="max-h-24 flex flex-wrap overflow-y-auto items-center gap-2 mt-2 pr-1">
                         {#each searchInfo.search as search}
                             <button
