@@ -1,5 +1,5 @@
-import { db } from "../src/lib/db/index.ts"
-import * as schema from '../src/lib/db/schema.ts';
+import { db } from "../src/lib/server/db/index.ts"
+import * as schema from '../src/lib/server/db/schema.ts';
 import { drizzle } from 'drizzle-orm/libsql';
 
 await db.delete(schema.fine_tunes)

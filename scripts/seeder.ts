@@ -1,6 +1,6 @@
-import * as schema from '../src/lib/db/schema.ts';
+import * as schema from '../src/lib/server/db/schema.ts';
 import { fa, faker } from '@faker-js/faker';
-import { db } from "../src/lib/db/index.ts"
+import { db } from "../src/lib/server/db/index.ts"
 
 
 const mockRules: (typeof schema.rules.$inferInsert) []= [];
@@ -22,7 +22,7 @@ for (let i = 0; i <2; i++) {
 const actualTechnologies = await db.insert(schema.technologies).values(mockTech).returning()
 
 const mockCustomers: (typeof schema.customers.$inferInsert) []= [];
-for (let i = 0; i <20; i++) {
+for (let i = 0; i <40; i++) {
     mockCustomers.push({
         name: faker.commerce.productName(),
         technologyId: faker.helpers.arrayElement(actualTechnologies).id,
@@ -42,7 +42,7 @@ for (let i = 0; i <20; i++) {
 const actualAnalysts = await db.insert(schema.analysts).values(mockAnalysts).returning()
 
 const mockFineTunes: (typeof schema.fine_tunes.$inferInsert) []= [];
-for (let i = 0; i <30; i++) {
+for (let i = 0; i <1000; i++) {
 
     mockFineTunes.push({
         ruleId: faker.helpers.arrayElement(actualRules).id,
