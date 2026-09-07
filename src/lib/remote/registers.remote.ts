@@ -4,6 +4,7 @@ import { type } from "arktype"
 import { db } from '#lib/server/db/index'
 import { analysts, customers, fine_tunes, technologies, rules} from "#lib/server/db/schema";
 import { eq, and, gt, asc, desc, like, notLike, lt, count, or, gte, lte, sql, ne } from 'drizzle-orm'
+import { SvelteSet } from "svelte/reactivity";
 
 
 
@@ -261,7 +262,7 @@ export const createForm = form(
 
 
 const searchSchema = type({
-    "search?": "string[]",
+    "search?": ['instanceof', SvelteSet<string>],
 
     "finalised?": "boolean",
 
@@ -276,10 +277,10 @@ const searchSchema = type({
 
 export const search = query(searchSchema, 
     async (data) => {
-        
-        // const searchTerms = data.search?.trim().split(/\s+/).filter(Boolean) ?? [];
 
-        const searchTerms = data.search?.flatMap(term => term.trim().split(/\s+/)).filter(Boolean) ?? []
+        // const searchTerms = typeof data.search === "undefined" ? [] : data.search.size > 0 ? Array.from(data.search).map(term => term.trim().split(/\s+/)) : []
+        const searchTerms = data.search?.size ? Array.from(data.search, term => term.trim()): [];
+        console.log(searchTerms)
 
         const where = and(searchTerms.length
             ? or(
@@ -352,7 +353,7 @@ export const getCSV = query(
     searchSchema,
     async (data) => {
 
-        const searchTerms = data.search?.flatMap(term => term.trim().split(/\s+/)).filter(Boolean) ?? []
+        const searchTerms = [...data.search!]?.map(term => term.trim().split(/\s+/)).filter(Boolean) ?? []
 
         const where = and(searchTerms.length
             ? or(
