@@ -3,7 +3,8 @@
     import { search } from "#lib/remote/registers.remote";
     import { goto } from "$app/navigation";
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
-    import  Toast  from '#lib/components/Toast.svelte';
+    // import  Toast  from '#lib/components/Toast.svelte';
+    import Toast from '#lib/components/Toast.svelte'
     import { downloadCSV } from '#lib/utils/downloadCSV';
     import { authClient } from '#lib/auth-client'
     // import { setIsDelete, type IsDelete } from '#lib/context/deleteNextDetail'
