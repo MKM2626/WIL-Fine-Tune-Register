@@ -5,9 +5,9 @@ dotenv.config()
 
 export default defineConfig({
 	out: './drizzle',
-	schema: './src/lib/db/schema.ts',
+	schema: './src/lib/server/db/schema.ts',
 	dialect: 'sqlite',
 	dbCredentials: {
-		url: process.env.DB_FILE_NAME!,
+		url: "file:local.db",
 	}
 }) satisfies Config;
