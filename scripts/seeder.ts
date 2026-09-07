@@ -1,5 +1,5 @@
 import * as schema from '../src/lib/server/db/schema.ts';
-import { fa, faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 import { db } from "../src/lib/server/db/index.ts"
 
 
