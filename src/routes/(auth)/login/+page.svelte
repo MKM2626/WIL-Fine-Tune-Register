@@ -13,7 +13,7 @@
 
 
 <div class='flex min-h-screen items-center justify-center bg-bg-dark px-20 text-text'>
-    <div class='flex flex-col py-10 w-80 h-fit bg-bg rounded-lg shadow-2xl items-center justify-center'>
+    <div class='flex flex-col py-10 w-75 h-fit bg-bg rounded-lg shadow-2xl items-center justify-center'>
         <h1 class='text-3xl'>
             Sign In
         </h1>
@@ -30,7 +30,7 @@
             Login with GitHub
         </button>
 
-        <span class='text-sm text-text-muted'>Secure Authentication via GitHub</span>
+        <span class='mt-2 text-sm text-text-muted'>Secure Authentication via GitHub</span>
         <span class='text-sm text-text-muted'>We never store your data</span>
 
     </div>
