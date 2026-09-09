@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, search } from "#lib/remote/registers.remote";
     import { getSearchContext } from "#lib/context/search";
-	import { goto } from "$app/navigation";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
     import { authClient } from '#lib/auth-client'
     import { tabIndentation } from '#lib/utils/keyDownTextArea'
+	import { onMount } from "svelte";
 
     const session = authClient.useSession() 
 
@@ -34,15 +34,35 @@
 		)?.name
 	);
 
-    function submit() {
-        search(searchInfo).refresh()
-        toast.send('Saved')
-    }
-
+    onMount(() => {
+        createForm.fields.ruleID.set('')
+        createForm.fields.customerID.set('')
+        createForm.fields.after.set('');
+        
+        createForm.fields.global.set(false)
+        
+		createForm.fields.comment.set('');
+		createForm.fields.analystID.set('');
+		createForm.fields.finalised.set(false);
+    })
 </script>
 
-
-<form {...createForm} class="max-w-5xl">
+<form class="max-w-5xl" {...createForm.enhance(async (form) => {
+    try {
+        const result = await form.submit().updates(
+            search(searchInfo).withOverride((results) => ({...results}))
+        )
+        
+        if (result) {
+            toast.send('Saved')
+        }
+        else {
+            toast.send('Invalid data', 'error')
+        }
+    } catch(error) {
+        toast.send('Something went wrong', 'error')
+    }
+})}>
 
     <div class="flex items-center justify-between pb-5">
 
@@ -61,7 +81,6 @@
 
             <button
                 type="submit"
-                onclick={()=>submit()}
                 class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Save
@@ -69,14 +88,13 @@
         </div>
     </div>
 
-    <!-- Rule Details -->
-    <div class="bg-bg-light  rounded-lg p-5 flex flex-col gap-3">
+    <div class="bg-bg-light shadow-md rounded-lg p-5 flex flex-col gap-3">
         <div class="flex">
             <span class="w-32 text-text-muted">
                 Rule:
             </span>
 
-            <select
+            <!-- <select
                 class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action transition-all duration-250 ease-out outline-none"
                 {...createForm.fields.ruleID.as("select")}
             >
@@ -85,7 +103,18 @@
                         {rule.name}
                     </option>
                 {/each}
-            </select>
+            </select> -->
+
+            <div class='flex-1'>
+                <ComboBox 
+                    options={rules}
+                    placeholder="Select rule..."
+                    onSelect={(rule) => {createForm.fields.ruleID.set(rule.id)}}
+                />
+            </div>
+            
+
+            <input type="hidden" {...createForm.fields.ruleID.as("text")}/>
 
         </div>
 
@@ -94,7 +123,7 @@
                 Customer:
             </span>
 
-            <select
+            <!-- <select
                 class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.customerID.as("select")}
             >
@@ -103,7 +132,18 @@
                         {customer.name}
                     </option>
                 {/each}
-            </select>
+            </select> -->
+
+            <div class='flex-1'>
+                <ComboBox 
+                    options={customers}
+                    placeholder="Select customer..."
+                    onSelect={(customer) => {createForm.fields.customerID.set(customer.id)}}
+                />
+            </div>
+            
+
+            <input type="hidden" {...createForm.fields.customerID.as("text")}/>
         </div>
 
         <div class="flex">
@@ -118,16 +158,31 @@
     </div>
 
 
-    {#if $session.data?.user.teams.includes('admin') || $session.data?.user.teams.includes('senior')}
+    {#if $session.data?.user.teams.includes('admin') || $session.data?.user.teams.includes('senior') || !$session.data?.user.teams.includes('junior')}
         <div class="mt-5">
             <h3 class="text-xl mb-2">
                 Global
             </h3>
 
-            <div class="bg-bg-light rounded-lg p-4 flex items-center gap-3">
+            <div class="bg-bg-light shadow-md rounded-lg p-4 flex items-center gap-3">
                 <input {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
                 <label for="global" >
                     Will apply to all customers using this technology
+                </label>
+            </div>
+        </div>
+    {/if}
+
+    {#if !$session.data?.user.teams.includes('junior') || $session.data?.user.teams.includes('senior') || $session.data?.user.teams.includes('admin')}
+        <div class="mt-5">
+            <h3 class="text-xl mb-2">
+                Finalised
+            </h3>
+
+            <div class="bg-bg-light shadow-md rounded-lg p-4 flex items-center gap-3">
+                <input {...createForm.fields.finalised.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
+                <label for="global" >
+                    Will only finalise the chosen customer, even if set to global.
                 </label>
             </div>
         </div>
@@ -138,7 +193,7 @@
             Fine Tune Entry:
         </h3>
 
-        <div class="bg-bg-light rounded-lg p-4">
+        <div class="bg-bg-light shadow-md rounded-lg p-4">
             <textarea
                 rows="4"
                 use:tabIndentation
@@ -153,27 +208,23 @@
             Analyst:
         </h3>
 
-        <div class="bg-bg-light rounded-lg p-4">
-            <select
-                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
-                {...createForm.fields.analystID.as("select")}
-            >
-                {#each analysts as analyst}
-                    <option value={analyst.id}>
-                        {analyst.name}
-                    </option>
-                {/each}
-            </select>
+        <div class="bg-bg-light shadow-md rounded-lg p-4">
+            <ComboBox
+                options={analysts}
+                placeholder="Select analyst..."
+                onSelect={(analyst) => {createForm.fields.analystID.set(analyst.id)}}
+            />
         </div>
-    </div>
+        
+    </div> 
 
     <div class="mt-5">
         <h3 class="text-xl mb-2">
             Comment:
         </h3>
-        <div class="bg-bg-light  rounded-lg p-4">
+        <div class="bg-bg-light shadow-md rounded-lg p-4">
             <textarea
-                
+                use:tabIndentation
                 rows="4"
                 class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.comment.as("text")}
