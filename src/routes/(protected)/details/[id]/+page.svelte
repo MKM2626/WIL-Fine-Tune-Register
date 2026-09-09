@@ -1,27 +1,24 @@
 <script lang="ts">
 	import { getDetails, deleteRow, search } from "#lib/remote/registers.remote.js";
     import { getSearchContext } from "#lib/context/search";
-    import { goto } from "$app/navigation";
+    import { beforeNavigate, goto } from "$app/navigation";
     import { diffWords } from 'diff';
     import { fade, fly, slide } from 'svelte/transition';
     import { toast } from '#lib/components/toast.svelte.js'
     import { authClient } from '#lib/auth-client'
-    // import { getIsDelete } from "#lib/context/deleteNextDetail";
-    // import { getSelectedId } from "#lib/context/selectedId"
+    import { getDeleteContext } from "#lib/context/deleteAndProceed"
 
     const session = authClient.useSession() 
 
     let { params } = $props();
     let id =$derived(params.id);
 
-    const moveOut = 200;
-    const delay = 200;
-    const moveIn = 200;
+    const moveOut = 0;
+    const delay = 0;
+    const moveIn = 0;
 
-    // const isDelete = getIsDelete()
+    const next = getDeleteContext()
     const searchInfo = getSearchContext()
-    // const selectedId = getSelectedId()
-
 
     let selectedFineTune = $derived(await getDetails(id))
     
@@ -37,7 +34,7 @@
 
         for (const part of differences) {
             if (part.removed) {
-                beforeResult.push({ class: "text-red-50", text: part.value})
+                beforeResult.push({ class: "text-red-500", text: part.value})
             }
             else if (part.added) {
                 afterResult.push({ class: "text-green-500", text: part.value})
@@ -56,22 +53,30 @@
 
     let otherDiffs = $derived(getDiff(selectedFineTune.before, selectedFineTune.after))
 
-
-
     async function del() {
-        if (!$session.data?.user.teams.includes('admin')) return
         if (deleting) return 
-
+        if (!$session.data?.user.teams.includes('admin')) return
+        
         deleting = true
 
         try {
-            // isDelete.bool = true
-            await deleteRow(id)
-            search(searchInfo).refresh()
-            toast.send('Deleted')
+            const deleted = await deleteRow(id).updates(
+                search(searchInfo).withOverride((results) => ({
+                    ...results
+                }))
+            );
+
+            if (deleted) {
+                goto(`/details/${next.id}`)
+                toast.send('Deleted')
+            } else {
+                toast.send('Failed to delete', 'error')
+            }
+      
         }
         catch (error) {
-            toast.send(error instanceof Error ? error.message : "Failed to delete", "error")
+            history.back()
+            toast.send("Something went wrong", "error")
         }
        finally {
             deleting=false
@@ -114,23 +119,23 @@
 
 
 
-<div class="bg-bg-light rounded-lg p-5 flex flex-col gap-3 overflow-hidden">
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+<div class="bg-bg-light shadow-md rounded-lg p-5 flex flex-col gap-3 overflow-hidden">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Date:
         </span>
         {#key params.id}
 
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
-                {selectedFineTune.date.toLocaleDateString()}
+                {selectedFineTune.date.toISOString()}
             </span>
 
             
         {/key}
     </div>
 
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Rule:
         </span>
         {#key params.id}
@@ -141,12 +146,12 @@
             
     </div>
 
-        <div class="flex">
-        <span class="w-32 text-text-muted">
+        <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Customer:
         </span>
         {#key params.id}
-            <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
+            <span class='' in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.customer}
             </span>
         {/key}
@@ -154,8 +159,8 @@
         
     </div>
 
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Technology:
         </span>
         {#key params.id}
@@ -165,8 +170,8 @@
         {/key}
     </div>
 
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Analyst:
         </span>
         {#key params.id}
@@ -176,8 +181,8 @@
         {/key}
     </div>
 
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Finalised: 
         </span>
         {#key params.id}
@@ -185,8 +190,8 @@
         {/key}
     </div>
 
-    <div class="flex">
-        <span class="w-32 text-text-muted">
+    <div class="flex gap-4">
+        <span class="w-28 text-text-muted">
             Global: 
         </span>
         {#key params.id}
@@ -216,6 +221,7 @@
                             <!-- in futer click on to take to same rule of that customer -->
                             <button 
                                 class="wrap-break-words text-wrap py-2 px-2 text-center bg-bg border border-border hover:border-indigo-500 rounded-lg"
+                                onclick={()=>goto(`/details/${global.id}`)}
                             >
                                 {global.customers}
                             </button>
@@ -233,10 +239,12 @@
     <h3 class="text-xl mb-2">
         Previous Fine Tune:
     </h3>
-    <div class="bg-bg-light rounded-lg p-4">
+    <div class="bg-bg-light shadow-md rounded-lg p-4">
         {#key params.id}
             {#each otherDiffs.before as diff}
-                <span class={diff.class}>{diff.text}</span>
+                <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="whitespace-pre-wrap inline {selectedFineTune.before !== 'Initial Rule' ? diff.class : ''}">
+                    {diff.text}
+                </span>
             {/each}
         {/key}
     </div>
@@ -246,10 +254,12 @@
     <h3 class="text-xl mb-2">
         Updated Fine Tune:
     </h3>
-    <div class="bg-bg-light  rounded-lg p-4">
+    <div class="bg-bg-light shadow-md rounded-lg p-4">
         {#key params.id}
             {#each otherDiffs.after as diff}
-                <span class={diff.class}>{diff.text}</span>
+                <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}  class="whitespace-pre-wrap inline {selectedFineTune.before !== 'Initial Rule' ? diff.class : ''}">
+                    {diff.text}
+                </span>
             {/each}
         {/key}
     </div>
@@ -259,7 +269,7 @@
     <h3 class="text-xl mb-2">
         Comments:
     </h3>
-    <div class="bg-bg-light  rounded-lg p-4 transition:fade">
+    <div class="bg-bg-light shadow-md rounded-lg p-4 transition:fade">
         {#key params.id}   
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} >
                 {selectedFineTune.comment ?? "No comment"}
