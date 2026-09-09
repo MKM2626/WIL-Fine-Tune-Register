@@ -9,6 +9,14 @@ export interface SearchInfo {
         start?: Date,
         end?: Date
         finalised?: boolean,
+        global?: boolean,
+
+        rule?: string,
+        customer?: string,
+        technology?: string,
+        analyst?: string,
+        fine_tune?: string,
+        comment?: string
     }
 
 export const [getSearchContext, setSearchContext] = createContext<SearchInfo>();
