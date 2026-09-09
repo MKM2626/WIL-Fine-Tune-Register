@@ -1,4 +1,4 @@
-import { query, form, command } from "$app/server";
+import { query, form, command, requested } from "$app/server";
 import { error, redirect } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
@@ -80,7 +80,7 @@ export const getDetails = query(ftSchema, async (ftId) => {
 
     const [isBefore] = await db.select({before: fine_tunes.fineTune}).from(fine_tunes).where(and(eq(fine_tunes.ruleId, result.ruleId), eq(fine_tunes.customerId, result.customerId), lt(fine_tunes.date, result.date))).orderBy(desc(fine_tunes.date)).limit(1)
 
-    const globals = result.globalId ? await db.select({customers: customers.name}).from(fine_tunes).leftJoin(customers, eq(fine_tunes.customerId, customers.id)).where(eq(fine_tunes.globalId, result.globalId)) : null
+    const globals = result.globalId ? await db.select({id: fine_tunes.id, customers: customers.name}).from(fine_tunes).leftJoin(customers, eq(fine_tunes.customerId, customers.id)).where(eq(fine_tunes.globalId, result.globalId)) : null
     
     return { 
         date: result.date,
@@ -100,17 +100,6 @@ export const getDetails = query(ftSchema, async (ftId) => {
         comment: result.comment
     }
 })
-
-const gSchema = type("string")
-export const getGlobals = query(gSchema, async(glId) => {
-    return await db.select({
-        customers: customers.name
-    })
-    .from(fine_tunes)
-    .leftJoin(customers, eq(fine_tunes.customerId, customers.id))
-    .where(eq(fine_tunes.globalId, glId))
-})
-
 
 // return number as string
 export const getRules = query(async() => {
@@ -133,14 +122,13 @@ export const getTechnology = query(async() => {
 
 const dSchema = type("string.numeric.parse")
 export const deleteRow = command(dSchema, async (ftID) => {
-    try {
-        await db.delete(fine_tunes).where(eq(fine_tunes.id, ftID))
-        return { success: true}
+    // throw new Error()
+    await db.delete(fine_tunes).where(eq(fine_tunes.id, ftID))
+
+    for await (const { query } of requested(search, 1)) {
+        query.refresh();
     }
-    catch (error) {
-        throw new Error("Failed to delete")
-    }
-   
+    return { success: true} 
 });
 
 
@@ -164,11 +152,17 @@ export const editForm = form(
         const comment = data.comment.trim() == "" ? null : data.comment
         
         if (finalised.finalsed) {
+            console.log('after')
             await db.update(fine_tunes).set({
                 comment: comment,
                 analystId: data.analystId
             })
             .where(eq(fine_tunes.id, data.id))
+
+            for await (const { query } of requested(search, 1)) {
+                query.refresh();
+            }
+
             redirect(303, `/details/${data.id}`)
         }
 
@@ -179,6 +173,11 @@ export const editForm = form(
             finalised: data.finalised
         })
         .where(eq(fine_tunes.id, data.id))
+
+        for await (const { query } of requested(search, 1)) {
+            query.refresh();
+        }
+
         redirect(303, `/details/${data.id}`)
     }
 )
@@ -186,7 +185,7 @@ export const editForm = form(
 const createSchema = type({
     ruleID: "string.numeric.parse",
     customerID: "string.numeric.parse",
-    after: "string",
+    after: "string > 0",
     global: "boolean = false",
     analystID: "string.numeric.parse",
     comment: "string",
@@ -195,6 +194,7 @@ const createSchema = type({
 export const createForm = form(
     createSchema,
     async (data) => {
+        console.log('start')
 
         const comment = data.comment.trim() == "" ? null : data.comment
 
@@ -210,6 +210,11 @@ export const createForm = form(
             }).returning({
                 id: fine_tunes.id
             })
+
+            console.log(returnId.id)
+            for await (const { query } of requested(search, 1)) {
+                query.refresh();
+            }
 
             redirect(303, `/details/${returnId.id}`)
         }
@@ -253,8 +258,12 @@ export const createForm = form(
                 fineTune: data.after, 
                 analystId: data.analystID, 
                 comment: comment,
-                finalised: data.finalised
+                finalised: false
             })
+        }
+
+        for await (const { query } of requested(search, 1)) {
+            query.refresh();
         }
         redirect(303, `/details/${returnId.id}`)
     }
@@ -264,7 +273,15 @@ export const createForm = form(
 const searchSchema = type({
     "search?": ['instanceof', SvelteSet<string>],
 
+    "rule?": "string",
+    "customer?": "string",
+    "technology?": "string",
+    "analyst?": "string",
+    "fine_tune?": "string",
+    "comment?": "string",
+
     "finalised?": "boolean",
+    "global?": "boolean",
 
     page: "number",
     pageSize: "number",
@@ -278,12 +295,11 @@ const searchSchema = type({
 export const search = query(searchSchema, 
     async (data) => {
 
-        // const searchTerms = typeof data.search === "undefined" ? [] : data.search.size > 0 ? Array.from(data.search).map(term => term.trim().split(/\s+/)) : []
         const searchTerms = data.search?.size ? Array.from(data.search, term => term.trim()): [];
         console.log(searchTerms)
 
         const where = and(searchTerms.length
-            ? or(
+            ? and(
                 ...searchTerms.map(term =>
                     or(
                         // lots or redundant searches. Some searches may not be applied, but thats how it goes.
@@ -297,6 +313,13 @@ export const search = query(searchSchema,
                 )
             )
             : undefined, 
+
+            data.rule ? like(rules.name, `%${data.rule}%`) : undefined,
+            data.customer ? like(customers.name, `%${data.customer}%`) : undefined,
+            data.technology ? like(technologies.name, `%${data.technology}%`) : undefined,
+            data.analyst ? like(analysts.name, `%${data.analyst}%`) : undefined,
+            data.fine_tune ? like(fine_tunes.fineTune, `%${data.fine_tune}%`) : undefined,
+            data.comment ? like(fine_tunes.comment, `%${data.comment}%`) : undefined,
 
             data.start ? gte(fine_tunes.date, data.start) : undefined,
 
@@ -342,9 +365,7 @@ export const search = query(searchSchema,
             pageSize: data.pageSize,
             totalRows,
             totalPages
-        };
-
-        
+        };        
     }
 )
 
@@ -398,6 +419,7 @@ export const getCSV = query(
         .where(where)
         .orderBy(sort)
 
+        // move error handing to the client, just let it be a function
         let success = rows.length > 0
         let message =  success ? undefined : "There are no records"
 
