@@ -11,7 +11,7 @@
     const session = authClient.useSession() 
 
     let { params } = $props();
-    let id =$derived(params.id);
+    let id =$derived(params.customerRuleId);
 
     const moveOut = 0;
     const delay = 0;
@@ -124,7 +124,7 @@
         <span class="w-28 text-text-muted">
             Date:
         </span>
-        {#key params.id}
+        {#key id}
 
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.date.toISOString()}
@@ -138,7 +138,7 @@
         <span class="w-28 text-text-muted">
             Rule:
         </span>
-        {#key params.id}
+        {#key id}
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.rule}
             </span>
@@ -150,7 +150,7 @@
         <span class="w-28 text-text-muted">
             Customer:
         </span>
-        {#key params.id}
+        {#key id}
             <span class='' in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.customer}
             </span>
@@ -163,7 +163,7 @@
         <span class="w-28 text-text-muted">
             Technology:
         </span>
-        {#key params.id}
+        {#key id}
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.technology}
             </span>
@@ -174,7 +174,7 @@
         <span class="w-28 text-text-muted">
             Analyst:
         </span>
-        {#key params.id}
+        {#key id}
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}>
                 {selectedFineTune.analyst}
             </span>
@@ -185,7 +185,7 @@
         <span class="w-28 text-text-muted">
             Finalised: 
         </span>
-        {#key params.id}
+        {#key id}
             <input type="checkbox" checked={selectedFineTune.finalised} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         {/key}
     </div>
@@ -194,7 +194,7 @@
         <span class="w-28 text-text-muted">
             Global: 
         </span>
-        {#key params.id}
+        {#key id}
             <input type="checkbox" checked={selectedFineTune.global} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         {/key}
     </div>
@@ -240,7 +240,7 @@
         Previous Fine Tune:
     </h3>
     <div class="bg-bg-light shadow-md rounded-lg p-4">
-        {#key params.id}
+        {#key id}
             {#each otherDiffs.before as diff}
                 <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="whitespace-pre-wrap inline {selectedFineTune.before !== 'Initial Rule' ? diff.class : ''}">
                     {diff.text}
@@ -255,7 +255,7 @@
         Updated Fine Tune:
     </h3>
     <div class="bg-bg-light shadow-md rounded-lg p-4">
-        {#key params.id}
+        {#key id}
             {#each otherDiffs.after as diff}
                 <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}}  class="whitespace-pre-wrap inline {selectedFineTune.before !== 'Initial Rule' ? diff.class : ''}">
                     {diff.text}
@@ -270,7 +270,7 @@
         Comments:
     </h3>
     <div class="bg-bg-light shadow-md rounded-lg p-4 transition:fade">
-        {#key params.id}   
+        {#key id}   
             <span in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} >
                 {selectedFineTune.comment ?? "No comment"}
             </span>

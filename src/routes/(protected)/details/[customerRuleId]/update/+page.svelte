@@ -6,6 +6,7 @@
     import ComboBox from '#lib/components/comboBox.svelte'
     import { authClient } from '#lib/auth-client'
 	import { tabIndentation } from "#lib/utils/keyDownTextArea";
+	import { onMount } from "svelte";
 
     const session = authClient.useSession() 
 
@@ -13,7 +14,7 @@
 
 	let { params } = $props();
 
-    let id = $derived(params.id)
+    let id = $derived(params.fineTuneId)
 
 	let fineTune = $derived(await getFineTune(id));
 
@@ -21,13 +22,7 @@
  
     let lastId = ''
 
-    $effect(() => {
-        const id = params.id
-
-        if (params.id == lastId) return
-
-        lastId = id
-
+    onMount(() => {
         createForm.fields.ruleID.set(fineTune.ruleId)
         createForm.fields.customerID.set(fineTune.customerId)
         createForm.fields.after.set(fineTune.after);

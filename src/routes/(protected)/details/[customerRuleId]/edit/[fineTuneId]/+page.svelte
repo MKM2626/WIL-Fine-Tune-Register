@@ -13,12 +13,12 @@
 
     let { params } = $props();
 
-    let fineTune = $derived(await getFineTune(params.id));
+    let fineTune = $derived(await getFineTune(params.fineTuneId));
 
     let analysts = await getAnalysts();
 
     onMount(() => {
-        editForm.fields.id.set(params.id)
+        editForm.fields.id.set(params.fineTuneId)
         editForm.fields.after.set(fineTune.after);
 		editForm.fields.comment.set(fineTune.comment ?? "");
 		editForm.fields.analystId.set(fineTune.analystId);

@@ -53,9 +53,9 @@
             search(searchInfo).withOverride((results) => ({...results}))
         )
         
-        if (result) {
+        if (result) { // keep this
             toast.send('Saved')
-        }
+        } // and this, important if arktype blocks it
         else {
             toast.send('Invalid data', 'error')
         }
@@ -66,6 +66,7 @@
 
     <div class="flex items-center justify-between pb-5">
 
+        <input type='datetime-local'>
         <header class="text-3xl">
             Create Fine Tune
         </header>

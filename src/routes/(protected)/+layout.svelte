@@ -12,7 +12,7 @@
 
     const session = authClient.useSession() 
 
-    let selectedId = $derived<string | null>(params.id ?? null)
+    let selectedId = $derived<string | null>(params.customerRuleId ?? null)
     let searchInfo = $state<SearchInfo>({ page: 1, pageSize: 50, descending: true})
     let deleteAndProceed = $state<DeleteAndProceed>({ id: null})
     let searchFinalised = $state('')
