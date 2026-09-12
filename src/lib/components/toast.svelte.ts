@@ -1,33 +1,3 @@
-// import { type } from 'arktype';
-
-// const toastSchema = type({
-// 	message: 'string',
-// 	type: "'success' | 'error'"
-// });
-
-// export type Toast = typeof toastSchema.infer;
-
-// let toast = $state<Toast | null>(null);
-
-// let timeout: ReturnType<typeof setTimeout>;
-
-// export function showToast(
-// 	message: string,
-// 	type: Toast['type'] = 'success'
-// ) {
-// 	toast = { message, type };
-
-// 	clearTimeout(timeout);
-
-// 	timeout = setTimeout(() => {
-// 		toast = null;
-// 	}, 1500);
-// }
-
-// export function getToast() {
-// 	return toast;
-// }
-
 export type ToastType = 'success' | 'error';
 
 export interface ToastItem {
@@ -39,9 +9,16 @@ export interface ToastItem {
 class ToastManager {
     list = $state<ToastItem[]>([]);
 
-    send(message: string, type: ToastType = 'success', duration = 6000) {
+    success(message: string, duration = 6000) {
         const id = crypto.randomUUID();
-        this.list.unshift({ id, message, type });
+        this.list.unshift({ id, message, type: 'success' });
+
+        setTimeout(() => this.dismiss(id), duration);
+    }
+
+    error(message: string, duration = 6000) {
+        const id = crypto.randomUUID()
+        this.list.unshift({ id, message, type: 'error'})
 
         setTimeout(() => this.dismiss(id), duration);
     }
