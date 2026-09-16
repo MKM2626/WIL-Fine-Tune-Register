@@ -1,5 +1,6 @@
 import { primaryKey, varchar } from "drizzle-orm/cockroach-core";
-import { sqliteTable, text, integer, unique, foreignKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, unique, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+// foreignKey ^
 
 export const rules = sqliteTable('rules', {
 	id: integer().primaryKey({ autoIncrement: true }),
@@ -19,7 +20,7 @@ export const customers = sqliteTable("customers", {
 
 export const analysts = sqliteTable("analysts", {
 	id: integer().primaryKey({ autoIncrement: true }),
-	githubId: integer().notNull(),
+	email: varchar({ length: 254 }).notNull(),
 	name: varchar({ length: 255}).notNull(),
 });
 
@@ -34,10 +35,10 @@ export const customer_rules = sqliteTable('customer_rules', {
 
 export const fine_tunes = sqliteTable("fine_tunes", {
     id: integer().primaryKey({ autoIncrement: true }),
-	previousFineTuneId: integer('previous_fine_tune_id'),
+	previousFineTuneId: integer('previous_fine_tune_id').references((): AnySQLiteColumn => fine_tunes.id),
 	version: integer().notNull(),
     date: integer({ mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
-	expireyDate: integer({ mode: 'timestamp_ms' }),
+	expiryDate: integer({ mode: 'timestamp_ms' }),
     customerRuleId: integer().references(() => customer_rules.id).notNull(),
 	globalId: varchar({ length: 36}),
 
@@ -50,13 +51,19 @@ export const fine_tunes = sqliteTable("fine_tunes", {
 	finalised: integer ({ mode: "boolean"}).notNull().$defaultFn(() => false),
 	finalisedAnalystId: integer().references(() => analysts.id),
 }, (t) => [
-	unique('unique_version').on(t.version), 
-	foreignKey({
-		columns: [t.previousFineTuneId],
-		foreignColumns: [t.id],
-		name: 'previous_fine_tune_id_fk'
-	})
+	unique('unique_customer_rule_version')
+	.on(t.customerRuleId, t.version),
+	// foreignKey({
+	// 	columns: [t.previousFineTuneId],
+	// 	foreignColumns: [t.id],
+	// 	name: 'previous_fine_tune_id_fk'
+	// })
 ]);
+
+export const tags = sqliteTable("tags", {
+	id: integer().primaryKey({ autoIncrement: true }),
+	name: varchar({ length: 72}).notNull().unique(),
+})
 
 export const fine_tune_tags = sqliteTable("fine_tune_tags", {
 	fineTuneId: integer().references(() => fine_tunes.id).notNull(),
@@ -66,10 +73,8 @@ export const fine_tune_tags = sqliteTable("fine_tune_tags", {
 
 )
 
-export const tags = sqliteTable("tags", {
-	id: integer().primaryKey({ autoIncrement: true }),
-	name: varchar({ length: 72}).notNull().unique(),
-})
+
+
 
 // export const analyst_comment_history = sqliteTable("analyst_comment_history", {
 // 	id: integer().primaryKey({ autoIncrement: true }),
@@ -78,7 +83,6 @@ export const tags = sqliteTable("tags", {
 // 	fineTuneId: integer().references(() => fine_tunes.id).notNull(),
 // 	comment: text().notNull()
 // })
-
 
 
 
