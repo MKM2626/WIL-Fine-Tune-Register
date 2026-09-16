@@ -1,12 +1,12 @@
-import { query, form, command, requested } from "$app/server";
-import { error, redirect } from '@sveltejs/kit';
+import { query } from "$app/server";
+import { error } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
-import { analysts, customers, fine_tunes, technologies, rules, customer_rules, tags, fine_tune_tags} from "#lib/server/db/schema";
-import { eq, and, gt, asc, desc, like, lt, or, gte, lte, sql, ne, isNotNull, isNull, countDistinct, inArray, max } from 'drizzle-orm'
-import { SvelteSet } from "svelte/reactivity";
-import { alias } from "drizzle-orm/cockroach-core";
-import { AppError } from "#lib/errors/appError";
+import { customers, technologies, rules, customer_rules } from "#lib/server/db/schema";
+import { eq } from 'drizzle-orm'
+// import { SvelteSet } from "svelte/reactivity";
+// import { alias } from "drizzle-orm/cockroach-core";
+// import { AppError } from "#lib/errors/appError";
 
 const crSchema = type("string.numeric.parse")
 export const getCustomerRuleDetails = query(crSchema, async (crId) => {
