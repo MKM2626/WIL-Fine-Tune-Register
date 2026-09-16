@@ -1,4 +1,4 @@
-import { toast } from '#lib/components/toast.svelte';
+import { toast } from '../components/toast.svelte.ts'
 import { AppError } from './appError';
 
 // Unsure of what type it should be
