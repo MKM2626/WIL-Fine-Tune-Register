@@ -1,6 +1,6 @@
 <script lang="ts">
     import { getFineTune, getAnalysts, editForm, search } from "#lib/remote/registers.remote";
-	import { getSearchContext } from "#lib/context/search";
+	import { getSearchContext } from "#lib/context/customerRuleSearch.js";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from "#lib/components/comboBox.svelte"
 	import { onMount } from "svelte";
@@ -32,13 +32,12 @@
         const result = await form.submit().updates(
             search(searchInfo).withOverride((results) => ({...results}))
         )
-        if (result) {
-            toast.send('Saved')
-        } else {
-            toast.send('Invalid data', 'error')
-        }
+
+            toast.success('Saved')
+
+
     } catch(error) {
-        toast.send('Something went wrong', 'error')
+
     }
 })}>
     <div class="flex items-center justify-between pb-5">
