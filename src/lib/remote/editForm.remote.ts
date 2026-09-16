@@ -1,13 +1,13 @@
-import { query, form, command, requested } from "$app/server";
-import { error, redirect } from '@sveltejs/kit';
+import { form, requested } from "$app/server";
+import { redirect } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
-import { analysts, customers, fine_tunes, technologies, rules, customer_rules, tags, fine_tune_tags} from "#lib/server/db/schema";
-import { eq, and, gt, asc, desc, like, lt, or, gte, lte, sql, ne, isNotNull, isNull, countDistinct, inArray, max } from 'drizzle-orm'
-import { SvelteSet } from "svelte/reactivity";
-import { alias } from "drizzle-orm/cockroach-core";
+import { fine_tunes, tags, fine_tune_tags} from "#lib/server/db/schema";
+import { eq, inArray } from 'drizzle-orm'
+// import { SvelteSet } from "svelte/reactivity";
+// import { alias } from "drizzle-orm/cockroach-core";
 import { AppError } from "#lib/errors/appError";
-import { getCustomerRules } from '#lib/remote/registers.remote' // change to own file
+import { getCustomerRules } from '#lib/remote/getCustomerRules.remote'
 
 // Update other fields?
 const editSchema = type({
@@ -56,6 +56,8 @@ export const editForm = form(
                 // ])
             });
         } catch(error) {
+            if (error instanceof AppError) throw error;
+
             throw new AppError(
                 'Failed to edit fine tune.',
                 'FINE_TUNE_EDIT'
