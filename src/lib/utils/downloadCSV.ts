@@ -1,38 +1,51 @@
-import { getSearchContext } from "#lib/context/search";
-import { getCSV } from '#lib/remote/registers.remote'
-import { toast } from '#lib/components/toast.svelte.js'
-import type { SearchInfo } from '#lib/context/search'
 
-export async function downloadCSV(searchInfo: SearchInfo) {
+// import { getCSV } from '#lib/remote/registers.remote'
+import { getCSV } from "../remote/getCSV.remote";
+import { toast } from '../components/toast.svelte.js'
+import type { CRSearchInfo } from '../context/customerRuleSearch'
+import { handleError } from "../errors/handleError";
 
-    let data = await getCSV(searchInfo)
+export async function downloadCSV(inputCRSearchInfo: CRSearchInfo) {
 
-    if (!data.success) {
-        toast.send(`${data.message}`, 'error')
-        return
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const  {page, pageSize, ...crSearchInfo} = inputCRSearchInfo
+
+
+    try {
+        const data = await getCSV({ crSearchInfo})
+
+        const ruleOrCustomer = data.distinctCustomers.length > data.distinctRules.length ?  data.distinctRules.join(' + ') : data.distinctCustomers.join((' + '))
+
+        const filename = crSearchInfo.search ? [data.date, ruleOrCustomer].filter(value => value !== null && value !== undefined && value !== '').join(' | ') : [data.date,`All Fine Tune`].filter(value => value !== null && value !== undefined && value !== '').join(' | ')
+
+        // can't diff between yes or no
+        const headers = Object.keys(data.rows[0])
+
+        const escapeCSV = (value: string | null) => value === null ? '' : `"${String(value).replace(/"/g, '""')}"` 
+        const csvRows = data.rows.map(row => 
+            // added header to be as keyof typeof row, as i know its always going to be a type of row
+            headers.map(header => escapeCSV(row[header as keyof typeof row])).join(',')
+        );
+
+        const csvString = [headers.map(escapeCSV).join(','), ...csvRows].join('\r\n')
+
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename + ".csv");
+        link.style.visibility = "hidden";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success(`Downloaded ${filename}`)
+        
+    } catch(error) {
+        console.log("this error", error)
+
+        handleError(error)
     }
-
-    let ruleOrCustomer = data.distinctCustomers.length > data.distinctRules.length ?  data.distinctRules.map(row => row.rules).join(' + ') : data.distinctCustomers.map(row => row.customer).join((' + '))
-
-    let filename = searchInfo.search ? [data.date, ruleOrCustomer].filter(value => value !== null && value !== undefined && value !== '').join(' | ') : [data.date,`All Fine Tune`].filter(value => value !== null && value !== undefined && value !== '').join(' | ')
-
-    let headers = Object.keys(data.rows[0]) as Array<keyof typeof data.rows[0]>
-    const escapeCSV = (value: Date | string | null) => value === null ? `"${String(value).replace(/"/g, '""')}"` : ''
-    let csvRows = data.rows.map(row => 
-        headers.map(header => escapeCSV(row[header])).join(',')
-    );
-
-    let csvString = [headers.map(escapeCSV).join(','), ...csvRows].join('\r\n')
-
-    let blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    let url = URL.createObjectURL(blob);
-
-    let link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename + ".csv");
-    link.style.visibility = "hidden";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
