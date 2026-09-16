@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getAnalysts, getFineTune, createForm, search } from "#lib/remote/registers.remote";
-    import { getSearchContext } from "#lib/context/search";
+    import { getSearchContext } from "#lib/context/customerRuleSearch.js";
 	import { goto } from "$app/navigation";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
@@ -47,13 +47,13 @@
             search(searchInfo).withOverride((results) => ({...results}))
         )
         if (result) {
-            toast.send('Saved')
+            toast.success('Saved')
         } else {
-            toast.send('Invalid data', 'error')
+            toast.error('Invalid data')
         }
     }
     catch(error) {
-        toast.send('Something went wrong', 'error')
+        toast.error('Something went wrong')
     }
 })}>
 
