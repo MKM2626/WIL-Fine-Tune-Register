@@ -66,7 +66,8 @@
         <div>
             <div class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-lg bg-bg-light border border-border shadow-lg">
                 {#if filteredOptions.length > 0}
-                    {#each filteredOptions as option}
+                    <!-- * Each option should have a key -->
+                    {#each filteredOptions as option (option.id)} 
                         <button
                             type="button"
                             onmousedown={() => selectOption(option)}
