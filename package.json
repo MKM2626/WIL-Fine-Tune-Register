@@ -17,6 +17,7 @@
 		"db:seeder": "pnpm exec node --experimental-strip-types scripts/seeder.ts",
 		"db:clean": "pnpm exec node --experimental-strip-types scripts/dbclean.ts",
 		"db:reset": "pnpm run db:clean && pnpm run db:seeder",
+		"db:seederV2": "pnpm exec node --experimental-strip-types scripts/seederV2.ts",
 		"auth:schema": "auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},
 	"devDependencies": {
