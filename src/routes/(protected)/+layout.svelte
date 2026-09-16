@@ -1,25 +1,28 @@
 <script lang="ts">
     let { children, params } = $props();
-    import { search } from "#lib/remote/registers.remote";
+    import { getCustomerRules } from '#lib/remote/getCustomerRules.remote'
     import { goto } from "$app/navigation";
-    import { setSearchContext, type SearchInfo } from "#lib/context/search";
+    import { setCRSearchContext, type CRSearchInfo } from "#lib/context/customerRuleSearch";
     import Toast from '#lib/components/Toast.svelte'
     import { downloadCSV } from '#lib/utils/downloadCSV';
     import { authClient } from '#lib/auth-client'
     import { setDeleteContext, type DeleteAndProceed } from '#lib/context/deleteAndProceed'
     import { onMount } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
+    // import ExportPopUp from '#lib/components/ExportPopUp.svelte';
+
 
     const session = authClient.useSession() 
 
     let selectedId = $derived<string | null>(params.customerRuleId ?? null)
-    let searchInfo = $state<SearchInfo>({ page: 1, pageSize: 50, descending: true})
+    let crSearchInfo = $state<CRSearchInfo>({ page: 1, pageSize: 50, descending: true})
     let deleteAndProceed = $state<DeleteAndProceed>({ id: null})
     let searchFinalised = $state('')
     let searchGlobal = $state('')
     let expandedSearch = $state(false)
+    // let exportOpen = $state(false)
     
-    setSearchContext(searchInfo)
+    setCRSearchContext(crSearchInfo)
     setDeleteContext(deleteAndProceed)
 
     // Inputs
@@ -34,7 +37,7 @@
     let fineTuneInput = $state('')
     let commentInput = $state('')
 
-    let results = $derived(await search(searchInfo))
+    let results = $derived(await getCustomerRules(crSearchInfo))
 
     onMount(() => {
         if (results) {
@@ -57,25 +60,33 @@
         }
     })
 
+    // function exportCSV(option: ) {
+    //     try {
+
+    //     } catch(error) {
+    //         handleError(error)
+    //     }
+    // }
+
     function clearDate() {
         startInput = ''
         endInput = ''
-        delete searchInfo.start
-        delete searchInfo.end
+        delete crSearchInfo.ftStart
+        delete crSearchInfo.ftEnd
     }
 
     function applyStart() {
         if (startInput !== "") {
-            searchInfo.start = new Date(startInput)
-            searchInfo.page = 1
+            crSearchInfo.ftStart = new Date(startInput)
+            crSearchInfo.page = 1
             pageInput = 1
         }
     }
 
     function applyEnd() { 
         if (startInput != "" && startInput < endInput) {
-            searchInfo.end = new Date(endInput)
-            searchInfo.page = 1
+            crSearchInfo.ftEnd = new Date(endInput)
+            crSearchInfo.page = 1
             pageInput = 1
         }
         else {
@@ -88,29 +99,29 @@
 
         if (!search) return 
 
-        if (!searchInfo.search) {
-            searchInfo.search = new SvelteSet<string>()
+        if (!crSearchInfo.search) {
+            crSearchInfo.search = new SvelteSet<string>()
         }
 
-        if (!searchInfo.search.has(search)) {
-            searchInfo.search.add(search)
+        if (!crSearchInfo.search.has(search)) {
+            crSearchInfo.search.add(search)
         }
     
         globalSearchInput = ''
-        searchInfo.page = 1
+        crSearchInfo.page = 1
         pageInput = 1
     }
 
     function removeSearch(search: string) {
-        if (!searchInfo.search) return;
+        if (!crSearchInfo.search) return;
 
-        searchInfo.search.delete(search)
+        crSearchInfo.search.delete(search)
 
-        if (searchInfo.search.size === 0) {
-            delete searchInfo.search;
+        if (crSearchInfo.search.size === 0) {
+            delete crSearchInfo.search;
         }
 
-        searchInfo.page = 1
+        crSearchInfo.page = 1
         pageInput = 1
     }
 
@@ -124,23 +135,23 @@
                 pageInput = maxPage
             }
 
-            searchInfo.page = pageInput;
+            crSearchInfo.page = pageInput;
             }
     }
 
     async function previousPage() {
-        if (searchInfo.page > 1) {
-            searchInfo.page--;
-            pageInput = searchInfo.page;
+        if (crSearchInfo.page > 1) {
+            crSearchInfo.page--;
+            pageInput = crSearchInfo.page;
         }
     }
 
     async function nextPage() {
         if (results) {
             const maxPage = results.totalPages
-            if (searchInfo.page < maxPage) {
-                searchInfo.page++;
-                pageInput = searchInfo.page;
+            if (crSearchInfo.page < maxPage) {
+                crSearchInfo.page++;
+                pageInput = crSearchInfo.page;
             }
         }
     }
@@ -148,19 +159,19 @@
     function searchFinalisedBtn() {
         if (searchFinalised == '') {
             searchFinalised = 'true'
-            searchInfo.finalised = true
-            searchInfo.page = 1
+            crSearchInfo.finalised = true
+            crSearchInfo.page = 1
             pageInput = 1
 
         } else if (searchFinalised == 'true') {
             searchFinalised = 'false'
-            searchInfo.finalised = false
-            searchInfo.page = 1
+            crSearchInfo.finalised = false
+            crSearchInfo.page = 1
             pageInput = 1
         } else {
             searchFinalised = ''
-            delete searchInfo.finalised
-            searchInfo.page = 1
+            delete crSearchInfo.finalised
+            crSearchInfo.page = 1
             pageInput = 1
         }
     }
@@ -168,28 +179,28 @@
     function searchGlobalBtn() {
         if (searchGlobal == '') {
             searchGlobal = 'true'
-            searchInfo.global = true
-            searchInfo.page = 1
+            crSearchInfo.global = true
+            crSearchInfo.page = 1
             pageInput = 1
 
         } else if (searchGlobal == 'true') {
             searchGlobal = 'false'
-            searchInfo.global = false
-            searchInfo.page = 1
+            crSearchInfo.global = false
+            crSearchInfo.page = 1
             pageInput = 1
         } else {
             searchGlobal = ''
-            delete searchInfo.global
-            searchInfo.page = 1
+            delete crSearchInfo.global
+            crSearchInfo.page = 1
             pageInput = 1
         }
     }
 
-    function applyAdvancedSearch(type: "rule" | "customer" | "technology" | "analyst" | "fine_tune" | "comment", search: string) {
+    function applyAdvancedSearch(type: "rule" | "customer" | "technology" | "analyst" | "fineTune" | "comment", search: string) {
         if (search.trim() === '') {
-            delete searchInfo[type];
+            delete crSearchInfo[type];
         } else {
-            searchInfo[type] = search.trim();
+            crSearchInfo[type] = search.trim();
         }
     }
 
@@ -202,6 +213,15 @@
 
 <div class="flex w-screen h-screen overflow-hidden">
     
+
+        <!-- <ExportPopUp 
+            open={exportOpen}
+            onClose={() => exportOpen = false}
+            onExport={(option) => downloadCSV(option, crSearchInfo)}
+        /> -->
+
+    
+
     <div class="flex-4/10 w-110 min-w-90 p-6 bg-bg-dark text-text flex flex-col overflow-hidden">
         <div class="flex flex-wrap gap-3 items-center justify-between">
             <header class="text-3xl">
@@ -224,7 +244,7 @@
                     <button 
                         type="button"
                         class="px-4 py-2 font-semibold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-                        onclick={()=>downloadCSV(searchInfo)}
+                        onclick={()=>downloadCSV(crSearchInfo)}
                     >
                         Export
                     </button>
@@ -234,7 +254,7 @@
                     <button 
                         type="button"
                         class="px-4 py-2 font-semibold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-                        onclick={async () => {await authClient.signOut(), goto('/login')}}
+                        onclick={async () => {await authClient.signOut(); goto('/login')}}
                     >
                         Sign Out
                     </button>
@@ -261,10 +281,10 @@
                 <div class='flex flex-wrap gap-x-4 gap-y-2 justify-end items-end'>
                     <button
                         type="button"
-                        onclick={() => searchInfo.descending = !searchInfo.descending}
+                        onclick={() => crSearchInfo.descending = !crSearchInfo.descending}
                         class="flex w-12 h-11 bg-bg-light justify-center items-center text-text border border-border rounded-lg hover:border-action transition-all duration-250 ease-out"
                     >
-                        {searchInfo.descending ? "▼" : "▲"}
+                        {crSearchInfo.descending ? "▼" : "▲"}
                     </button>
 
                     <button
@@ -320,9 +340,9 @@
                     </button>
                 </div>
 
-                {#if (searchInfo.search?.size ?? 0) > 0} 
+                {#if (crSearchInfo.search?.size ?? 0) > 0} 
                     <div class="max-h-24 flex flex-wrap overflow-y-auto items-center gap-2 mt-4 pr-1">
-                        {#each searchInfo.search as search}
+                        {#each crSearchInfo.search as search (search)}
                             <button
                                 type="button"
                                 onclick={()=>removeSearch(search)}
@@ -417,7 +437,7 @@
                                     const target = e.currentTarget;
                                     clearTimeout(Number(target.dataset.timerId));
                                     target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("fine_tune", target.value);
+                                    applyAdvancedSearch("fineTune", target.value);
                                     }, 500)); 
                                 }} 
                             >
@@ -452,7 +472,7 @@
 
         <div class="flex-1 overflow-y-auto flex flex-col gap-3">
             {#if results}
-                {#each results.rows as row}
+                {#each results.rows as row (row.id)}
                     <button
                         class="px-5 py-3 bg-bg-light rounded-lg text-wrap text-left transition-all duration-250 ease-out border-l-0 border-l-bg-light hover:brightness-125
                             {selectedId === row.id ? "border-l-5 border-l-indigo-500" : " "}"
@@ -491,7 +511,7 @@
                     class="px-1"
                      type="button"
                      onclick={previousPage}
-                     disabled={searchInfo.page < 2}
+                     disabled={crSearchInfo.page < 2}
                   >
                      «
                 </button>
@@ -525,7 +545,7 @@
                     class="px-1"
                      type="button"
                      onclick={nextPage}
-                     disabled={results ? searchInfo.page >= results.totalPages : true}
+                     disabled={results ? crSearchInfo.page >= results.totalPages : true}
                   >
                      »
                 </button>
@@ -538,7 +558,10 @@
         <!-- {#if results.loading} 
             <p>hiu</p>
         {:else if results.current} -->
+
             {@render children()}
+
+            
         <!-- {/if} -->
     </div>
 </div>
