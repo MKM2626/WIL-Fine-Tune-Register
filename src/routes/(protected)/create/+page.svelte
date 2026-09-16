@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, search } from "#lib/remote/registers.remote";
-    import { getSearchContext } from "#lib/context/search";
+    import { getSearchContext } from "#lib/context/customerRuleSearch.ts";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
     import { authClient } from '#lib/auth-client'
@@ -52,15 +52,11 @@
         const result = await form.submit().updates(
             search(searchInfo).withOverride((results) => ({...results}))
         )
-        
-        if (result) { // keep this
-            toast.send('Saved')
-        } // and this, important if arktype blocks it
-        else {
-            toast.send('Invalid data', 'error')
-        }
+
+        toast.success('Saved')
+
     } catch(error) {
-        toast.send('Something went wrong', 'error')
+
     }
 })}>
 
