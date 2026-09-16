@@ -1,13 +1,17 @@
-import { query, form, command, requested } from "$app/server";
-import { error, redirect } from '@sveltejs/kit';
+import { command, requested } from "$app/server";
+// import { error, redirect } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
-import { analysts, customers, fine_tunes, technologies, rules, customer_rules, tags, fine_tune_tags} from "#lib/server/db/schema";
-import { eq, and, gt, asc, desc, like, lt, or, gte, lte, sql, ne, isNotNull, isNull, countDistinct, inArray, max } from 'drizzle-orm'
-import { SvelteSet } from "svelte/reactivity";
-import { alias } from "drizzle-orm/cockroach-core";
+import { fine_tunes, customer_rules} from "#lib/server/db/schema";
+import { eq } from 'drizzle-orm'
+// import { SvelteSet } from "svelte/reactivity";
+// import { alias } from "drizzle-orm/cockroach-core";
 import { AppError } from "#lib/errors/appError";
-import { getCustomerRules } from '#lib/remote/registers.remote' // change to own file
+import { getCustomerRules } from '#lib/remote/getCustomerRules.remote'
+
+// TODO: Seniors should be able to delete fine tunes, but only if they are not finalised. Other wise only admin.
+// TODO: Seniors can't delete customer rules
+// TODO: On delete, if fine tune after the deleted one, change its previous fine tune to the deleted fine tunes previous fine tune.
 
 // should be fine?
 const dSchema = type("string.numeric.parse")
