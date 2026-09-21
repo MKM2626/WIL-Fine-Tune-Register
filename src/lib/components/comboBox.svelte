@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { ChevronDown } from '@lucide/svelte/icons'
+
     type Option = {
         id: string;
         name: string;
@@ -62,6 +64,11 @@
         />
     </div>
 
+    <ChevronDown
+        size={16}
+        class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-text-muted transition-transform {open ? 'rotate-180' : ''}"
+    />
+
     {#if open}
         <div>
             <div class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-lg bg-bg-light border border-border shadow-lg">
@@ -84,4 +91,37 @@
             </div>
         </div>
     {/if}
+
+    <!-- {#if open}
+        <ul
+            id="{uid}-list"
+            role="listbox"
+            bind:this={listEl}
+            class="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-bg-light py-1 shadow-lg"
+        >
+            {#each filtered as option, i (option.id)}
+                <li
+                    id="{uid}-opt-{option.id}"
+                    role="option"
+                    aria-selected={String(option.id) === current}
+                    title={option.name}
+                    onmousedown={(event) => {
+                        event.preventDefault(); // keep focus in the input so blur doesn't fire first
+                        choose(option);
+                    }}
+                    onmousemove={() => (activeIndex = i)}
+                    class="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm transition-colors
+                        {i === activeIndex ? 'bg-action/10' : ''}
+                        {String(option.id) === current ? 'font-medium text-indigo-300' : 'text-text'}"
+                >
+                    <span class="min-w-0 truncate">{option.name}</span>
+                    {#if String(option.id) === current}
+                        <Check size={14} class="shrink-0" />
+                    {/if}
+                </li>
+            {:else}
+                <li role="presentation" class="px-3 py-2 text-sm text-text-muted">No matches</li>
+            {/each}
+        </ul>
+    {/if} -->
 </div>
