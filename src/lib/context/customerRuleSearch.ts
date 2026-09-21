@@ -1,19 +1,21 @@
 import { createContext } from "svelte";
 import type { SvelteSet } from "svelte/reactivity";
 
+
 export interface CRSearchInfo { 
     
         search?: SvelteSet<string>, 
 
-        rule?: string,
-        customer?: string,
-        technology?: string,
+        rule?: SvelteSet<string>,
+        customer?: SvelteSet<string>,
+        technology?: SvelteSet<string>,
+        version?: SvelteSet<string>,
 
-        name?: string,
-        fineTune?: string,
-        finalisedAnalyst?: string,
-        analyst?: string,
-        comment?: string
+        name?: SvelteSet<string>,
+        fineTune?: SvelteSet<string>,
+        finalisedAnalyst?: SvelteSet<string>,
+        analyst?: SvelteSet<string>,
+        comment?: SvelteSet<string>
         tags?: SvelteSet<string>, 
         expiryDate?: boolean,
 
@@ -23,6 +25,7 @@ export interface CRSearchInfo {
         page: number, 
         pageSize: number, 
         descending: boolean,
+        isFineTuneSort: boolean,
 
         ftStart?: Date,
         ftEnd?: Date
