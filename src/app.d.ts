@@ -3,7 +3,7 @@ import type { User, Session } from 'better-auth';
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 
-type AppUser = User & { teams: string[] }
+type AppUser = User & { role: string }
 
 declare global {
 	namespace App {
