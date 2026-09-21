@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, search } from "#lib/remote/registers.remote";
-    import { getSearchContext } from "#lib/context/customerRuleSearch.ts";
+    import { getAnalysts, getCustomers, getRules, getTechnology } from "#lib/remote/getSimple.remote";
+    import { getCustomerRules } from "#lib/remote/getCustomerRules.remote";
+    import { getCRSearchContext } from "#lib/context/customerRuleSearch";
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
     import { authClient } from '#lib/auth-client'
@@ -9,7 +10,7 @@
 
     const session = authClient.useSession() 
 
-    const searchInfo = getSearchContext()
+    const crSearchInfo = getCRSearchContext()
 
 	let analysts = await getAnalysts();
 	let rules = await getRules();
