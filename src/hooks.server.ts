@@ -4,6 +4,7 @@ import { svelteKitHandler } from 'better-auth/svelte-kit'
 import { building } from "$app/env"; 
 import { sequence } from "@sveltejs/kit/hooks";
 import { error } from '@sveltejs/kit'
+import {isRole, atLeast} from '#lib/roles'
 
 const authentication: Handle = async ({ event, resolve }) => {
     return svelteKitHandler({event, resolve, auth, building });
@@ -27,13 +28,22 @@ const route_guard: Handle = async ({ event, resolve }) => {
         redirect(303, '/login')
     }
 
-    if (event.locals.user?.teams.length === 0 && event.locals.session) {
+    if (event.locals.session && !isRole(event.locals.user?.role)) {
         error(401, "You are not permitted to access this service")
     }
 
-    if (event.route.id?.startsWith('/(protected)/create') && (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior'))) {
+    // if (event.locals.user?.role.length === 0 && event.locals.session) {
+    //     error(401, "You are not permitted to access this service")
+    // }
+
+
+    if (event.route.id?.startsWith('/(protected)/create') && !atLeast(event.locals.user?.role, 'senior')) {
         error(403, 'You are not permitted to create a new rule');
     }
+
+    // if (event.route.id?.startsWith('/(protected)/create') && (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior'))) {
+    //     error(403, 'You are not permitted to create a new rule');
+    // }
 
     return resolve(event);
 };
