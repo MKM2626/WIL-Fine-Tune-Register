@@ -2,13 +2,13 @@ import { query } from "$app/server";
 import { error } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
-import { analysts, fine_tunes, tags, fine_tune_tags} from "#lib/server/db/schema";
-import { eq, and, gt, asc, desc, like, lt, or, gte, lte, sql, isNotNull, isNull, countDistinct } from 'drizzle-orm'
+import { analysts, fine_tunes, tags, fine_tune_tags } from "#lib/server/db/schema";
+import { eq, and, asc, desc, like, or, gte, lte, sql, isNotNull, isNull, countDistinct } from 'drizzle-orm'
 import { SvelteSet } from "svelte/reactivity";
 import { alias } from "drizzle-orm/cockroach-core";
 
 // get multiple fine tune details
-const gFTSchema = type({
+const GetFTDetailsSchema = type({
     customerRuleId: "string.numeric.parse",
     page: "number > 0",
     pageSize: "number > 0",
@@ -16,12 +16,13 @@ const gFTSchema = type({
 
     "search?": ['instanceof', SvelteSet<string>],
 
-    "name?": "0 < string < 73",
-    "fineTune?": "string > 0",
-    "analyst?": "0 < string < 255",
-    "finalisedAnalyst?": "0 < string < 255",
-    "comment?": "string",
+    "name?": ['instanceof', SvelteSet<string>],
+    "fineTune?": ['instanceof', SvelteSet<string>],
+    "analyst?": ['instanceof', SvelteSet<string>],
+    "finalisedAnalyst?": ['instanceof', SvelteSet<string>],
+    "comment?": ['instanceof', SvelteSet<string>],
     "tags?": ['instanceof', SvelteSet<string>],
+    "version?": ['instanceof', SvelteSet<string>],
 
     "expiryDate?": "boolean",
 
@@ -33,44 +34,77 @@ const gFTSchema = type({
     "start?": "Date",
     "end?": "Date",
 })
-export const getFineTuneDetails = query(gFTSchema, async (data) => {
-    const searchTerms = data.search?.size ? Array.from(data.search, term => term.trim()).filter(term => term!== '') : []
-    const searchTags = data.tags?.size ? Array.from(data.tags, term => term.trim()).filter(term => term!== '') : []
 
+
+export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
+    console.log(data)
+    const cleanSearchSet = (set: SvelteSet<string> | undefined) => {
+            if (!set?.size) return [];
+            const result = [];
+            for (const term of set) {
+                const trimmed = term.trim();
+                if (trimmed !== '') result.push(trimmed);
+            }
+            return result;
+        }
+    
+    // inputs
+    const searchAny = cleanSearchSet(data.search)
+    const searchName = cleanSearchSet(data.name)
+    const searchFineTune = cleanSearchSet(data.fineTune)
+    const searchFinalisedAnalyst = cleanSearchSet(data.finalisedAnalyst)
+    const searchAnalyst = cleanSearchSet(data.analyst)
+    const searchComment = cleanSearchSet(data.comment)
+    const searchTags = cleanSearchSet(data.tags)
+    const searchVersion = cleanSearchSet(data.version)
+
+    let start: Date | undefined = data.start
+    let end: Date | undefined = data.end
+
+    if (data.start && data.end && data.end < data.start) {
+        start = undefined
+        end = undefined
+    }
+
+    // alias tables
     const creatorAnalyst = alias(analysts, "creator_analyst")
     const finaliseAnalyst = alias(analysts, 'finalise_analyst')
     const previousFineTune = alias(fine_tunes, 'previous_fine_tune');
 
     const where = and(
-        searchTerms.length ? and(
-            ...searchTerms.map(term => or(
+        searchAny.length ? and(
+            ...searchAny.map(term => or(
                 like(fine_tunes.name, `%${term}%`), 
                 like(fine_tunes.fineTune, `%${term}%`),
                 like(creatorAnalyst.name, `%${term}%`),
                 like(finaliseAnalyst.name, `%${term}%`),
                 like(fine_tunes.comment, `%${term}%`),
-                like(tags.name, `%${term}%`)
+                like(tags.name, `%${term}%`), 
+                
+                Number.isInteger(Number(term)) ? eq(fine_tunes.version, Number(term)) : undefined
             ))
         ) : undefined,
 
-        data.name ? like(fine_tunes.name, `%${data.name}%`) : undefined,
-        data.fineTune ? like(fine_tunes.fineTune, `%${data.fineTune}%`) : undefined,
+        searchName.length ? or(...searchName.map(term => like(fine_tunes.name, `%${term}%`))) : undefined,
+        searchFineTune.length ? or(...searchFineTune.map(term => like(fine_tunes.fineTune, `%${term}%`))) : undefined,
        
-        data.analyst ? like(creatorAnalyst.name, `%${data.analyst}%`) : undefined,
-        data.finalisedAnalyst ? like(finaliseAnalyst.name, `%${data.analyst}%`) : undefined,
+        searchAnalyst.length ? or(...searchAnalyst.map(term => like(creatorAnalyst.name, `%${term}%`))) : undefined,
+        searchFinalisedAnalyst.length ? or(...searchFinalisedAnalyst.map(term => like(finaliseAnalyst.name, `%${term}%`))) : undefined,
 
-        data.comment ? like(fine_tunes.comment, data.comment) : undefined,
+        searchComment.length ? or(...searchComment.map(term => like(fine_tunes.comment, `%${term}%`))) : undefined,
 
-        searchTags.length ? and(
-            ...searchTags.map(term => like(tags.name, `%${term}%`))
-        ) : undefined,
+        searchVersion.length ? or( ...searchVersion.map(Number).filter(Number.isInteger).map(term => eq(fine_tunes.version, term))) : undefined,
+
+        searchTags.length ? or( ...searchTags.map(term => like(tags.name, `%${term}%`))) : undefined,
 
         data.expiryDate !== undefined ? data.expiryDate ? isNotNull(fine_tunes.expiryDate) : isNull(fine_tunes.expiryDate) : undefined,
         data.finalised !== undefined ? eq(fine_tunes.finalised, data.finalised) : undefined,
         data.global !== undefined ? data.global ? isNotNull(fine_tunes.globalId) : isNull(fine_tunes.globalId) : undefined,
 
-        data.start ? gte(fine_tunes.date, data.start) : undefined,
-        data.end ? lte(fine_tunes.date, data.end) : undefined,
+        start ? gte(fine_tunes.date, start) : undefined,
+        end ? lte(fine_tunes.date, end) : undefined,
+
+        eq(fine_tunes.customerRuleId, data.customerRuleId)
     )
 
     const [{ totalRows }] = await db
@@ -90,7 +124,7 @@ export const getFineTuneDetails = query(gFTSchema, async (data) => {
 
     let page = data.page
 
-    if (data.fineTuneId) {
+    if (data.fineTuneId !== undefined) {
         const selected = await db
             .select({
                 // date: fine_tunes.date,
@@ -101,8 +135,19 @@ export const getFineTuneDetails = query(gFTSchema, async (data) => {
             .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
             .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
             .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            .where(and(where, eq(fine_tunes.id, data.fineTuneId)))
-            .get();
+            .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
+            .where(where)
+            .orderBy(sort)
+            .groupBy(fine_tunes.id) // TODO: Fine out if needed
+            .get()
+            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
+            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
+            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
+            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
+            // .where(and(where, eq(fine_tunes.id, data.fineTuneId)))
+            // .get();
+
+            console.log()
 
         if (!selected) error(404, "Fine Tune does not exist.")
 
@@ -113,14 +158,27 @@ export const getFineTuneDetails = query(gFTSchema, async (data) => {
             .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
             .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
             .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            // .where(and(where, data.descending? gt(fine_tunes.date, selected.date) : lt(fine_tunes.date, selected.date)))
-            .where(and(where, data.descending? gt(fine_tunes.version, selected.version) : lt(fine_tunes.version, selected.version)))
-            // TODO: Think I need a order by on this
+            .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
+            .where(where)
             .orderBy(sort)
+            .groupBy(fine_tunes.id) // TODO: Fine out if needed
+
+            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
+            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
+            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
+            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
+            // // .where(and(where, data.descending? gt(fine_tunes.date, selected.date) : lt(fine_tunes.date, selected.date)))
+            // .where(and(where, data.descending? gt(fine_tunes.version, selected.version) : lt(fine_tunes.version, selected.version)))
+            // // TODO: Think I need a order by on this
+            // .orderBy(sort)
 
 
         page = Math.floor(selectedCount / data.pageSize) + 1;
     }
+
+
+
+    
 
     const rows = await db
         .select({
@@ -129,17 +187,37 @@ export const getFineTuneDetails = query(gFTSchema, async (data) => {
             name: fine_tunes.name,
 
             version: fine_tunes.version,
-            previousFineTune: fine_tunes.previousFineTuneId,
+            previousFineTuneId: sql<string>`${fine_tunes.previousFineTuneId}`.mapWith(String),
 
             before: sql<string>`COALESCE(${previousFineTune.fineTune}, 'Initial Rule')`,
             after: fine_tunes.fineTune,
+
+            expiryDate: fine_tunes.expiryDate,
+
+            globals: sql`
+                (
+                    SELECT json_group_array(
+                        json_object(
+                            'fineTuneId', ft.id,
+                            'customerRuleId', cr.id,
+                            'name', c.name
+                        )
+                    )
+                    FROM fine_tunes ft
+                    JOIN customer_rules cr ON ft.customerRuleId = cr.id
+                    JOIN customers c ON cr.customerId = c.id
+                    WHERE ft.globalId IS NOT NULL
+                        AND ft.globalId = ${fine_tunes.globalId}
+                        AND ft.id != ${fine_tunes.id}
+                )
+            `.mapWith((value) => JSON.parse(value as string) as { fineTuneId: number; customerRuleId: number; name: string }[]),
 
             globalId: fine_tunes.globalId,
             finalised: fine_tunes.finalised,
             analystName: creatorAnalyst.name,
             finaliseAnalystName: finaliseAnalyst.name,
             comment: fine_tunes.comment,
-            tags: sql<string[]>`json_group_array(${tags.name})`.as('tags'),
+            tags: sql`COALESCE( json_group_array(${tags.name}) FILTER (WHERE ${tags.name} IS NOT NULL), '[]')`.mapWith((value) => JSON.parse(value as string) as string[])
         })
         .from(fine_tunes)
         .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
@@ -153,13 +231,25 @@ export const getFineTuneDetails = query(gFTSchema, async (data) => {
         .limit(data.pageSize)
         .offset((page - 1) * data.pageSize)
 
+
+    
+    console.log(rows.slice(-2))
+
+    
+
+
+
     return {
         rows,
         page, 
         pageSize: data.pageSize,
         totalRows,
-        totalPages
+        totalPages, 
+        selectedId: data.fineTuneId ? String(data.fineTuneId) : null
     }
 })
+
+
+
 
 
