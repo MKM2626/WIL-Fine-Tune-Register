@@ -16,15 +16,15 @@ const getCSVSchema = type({
     crSearchInfo: {
         "search?": ['instanceof', SvelteSet<string>],
 
-        "rule?": "string",
-        "customer?": "string",
-        "technology?": "string",
-        "name?": "string",
+        "rule?": ['instanceof', SvelteSet<string>],
+        "customer?": ['instanceof', SvelteSet<string>],
+        "technology?": ['instanceof', SvelteSet<string>],
+        "name?": ['instanceof', SvelteSet<string>],
 
-        "fine_tune?": "string",
-        "finalisedAnalyst?": "string",
-        "analyst?": "string",
-        "comment?": "string",
+        "fine_tune?": ['instanceof', SvelteSet<string>],
+        "finalisedAnalyst?": ['instanceof', SvelteSet<string>],
+        "analyst?": ['instanceof', SvelteSet<string>],
+        "comment?": ['instanceof', SvelteSet<string>],
         "tags?": ['instanceof', SvelteSet<string>],
         "expiryDate?": "boolean",
 
