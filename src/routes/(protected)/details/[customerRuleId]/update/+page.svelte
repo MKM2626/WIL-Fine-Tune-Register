@@ -14,7 +14,7 @@
 
 	let { params } = $props();
 
-    let id = $derived(params.fineTuneId)
+    let id = $derived(params.customerRuleId)
 
 	let fineTune = $derived(await getFineTune(id));
 
