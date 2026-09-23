@@ -5,6 +5,7 @@ import { db } from '#lib/db'
 import { analysts, customers, fine_tunes, technologies, rules} from "#lib/db/schema";
 import { eq, and, gt, asc, desc, like, notLike, lt, count, or, gte, lte, sql, ne } from 'drizzle-orm'
 
+
 const ftSchema = type("string.numeric.parse")
 export const getFineTune = query(ftSchema, async (ftId) => {
     const [result] = await db.select({
@@ -130,8 +131,17 @@ export const getTechnology = query(async() => {
 
 const dSchema = type("string.numeric.parse")
 export const deleteRow = command(dSchema, async (ftID) => {
-    await db.delete(fine_tunes).where(eq(fine_tunes.id, ftID))
+    try {
+        await db.delete(fine_tunes).where(eq(fine_tunes.id, ftID))
+        return { success: true}
+    }
+    catch (error) {
+        throw new Error("Failed to delete")
+    }
+   
 });
+
+
 
 const editSchema = type({
         id: "string.numeric.parse",
@@ -151,7 +161,7 @@ export const editForm = form(
 
         const comment = data.comment.trim() == "" ? null : data.comment
         
-        if (finalised.finalsed || data.after == null) {
+        if (finalised.finalsed) {
             await db.update(fine_tunes).set({
                 comment: comment,
                 analystId: data.analystId
@@ -250,7 +260,9 @@ export const createForm = form(
 
 
 const searchSchema = type({
-    "search?": "string",
+    "search?": "string[]",
+
+    "finalised?": "boolean",
 
     page: "number",
     pageSize: "number",
@@ -264,7 +276,9 @@ const searchSchema = type({
 export const search = query(searchSchema, 
     async (data) => {
         
-        const searchTerms = data.search?.trim().split(/\s+/).filter(Boolean) ?? [];
+        // const searchTerms = data.search?.trim().split(/\s+/).filter(Boolean) ?? [];
+
+        const searchTerms = data.search?.flatMap(term => term.trim().split(/\s+/)).filter(Boolean) ?? []
 
         const where = and(searchTerms.length
             ? and(
@@ -280,7 +294,9 @@ export const search = query(searchSchema,
 
             data.start ? gte(fine_tunes.date, data.start) : undefined,
 
-            data.end ? lte(fine_tunes.date, data.end) : undefined
+            data.end ? lte(fine_tunes.date, data.end) : undefined,
+
+            data.finalised !== undefined ? eq(fine_tunes.finalised, data.finalised) : undefined
         )
 
         const [{ totalRows }] = await db.select({
@@ -302,7 +318,8 @@ export const search = query(searchSchema,
             date: fine_tunes.date, 
             rule: rules.name, 
             customer: customers.name, 
-            technology: technologies.name})
+            technology: technologies.name,
+            finalised: fine_tunes.finalised})
             .from(fine_tunes)
             .leftJoin(rules, eq(fine_tunes.ruleId, rules.id))
             .leftJoin(customers, eq(fine_tunes.customerId, customers.id))

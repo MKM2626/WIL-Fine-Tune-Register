@@ -2,6 +2,9 @@
 	import { getAnalysts, getCustomers, getTechnology, getRules, createForm, search } from "#lib/remote/registers.remote";
     import { getSearchContext } from "#lib/context/search";
 	import { goto } from "$app/navigation";
+    import { toast } from '#lib/components/toast.svelte.js'
+    import ComboBox from '#lib/components/comboBox.svelte'
+    
 
     const searchInfo = getSearchContext()
 
@@ -25,8 +28,13 @@
 	const technologyName = $derived(
 		technologies.find(
 			(technology) => technology.id == selectedCustomer?.technologyId
-		)?.name ?? "No technology"
+		)?.name
 	);
+
+    function submit() {
+        search(searchInfo).refresh()
+        toast.send('Saved')
+    }
 </script>
 
 
@@ -42,15 +50,15 @@
             <button 
                 type="button"
                 onclick={()=>goto(`/`)}
-                class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Cancel
             </button>
 
             <button
                 type="submit"
-                onclick={()=>search(searchInfo).refresh()}
-                class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                onclick={()=>submit()}
+                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Save
             </button>
@@ -58,14 +66,14 @@
     </div>
 
     <!-- Rule Details -->
-    <div class="bg-bg-light border border-border rounded-lg p-5 flex flex-col gap-3">
+    <div class="bg-bg-light  rounded-lg p-5 flex flex-col gap-3">
         <div class="flex">
             <span class="w-32 text-text-muted">
                 Rule:
             </span>
 
             <select
-                class="flex-1 px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action transition-all duration-250 ease-out outline-none"
                 {...createForm.fields.ruleID.as("select")}
             >
                 {#each rules as rule}
@@ -83,7 +91,7 @@
             </span>
 
             <select
-                class="flex-1 px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.customerID.as("select")}
             >
                 {#each customers as customer}
@@ -100,30 +108,35 @@
             </span>
 
             <span>
-                {technologyName}
+                {technologyName ?? "No customer selected"}
             </span>
         </div>
     </div>
 
-    <div class="mt-5 bg-bg-light border border-border rounded-lg p-5">
-        <div class="flex items-center gap-3">
+
+
+    <div class="mt-5">
+        <h3 class="text-xl mb-2">
+            Global
+        </h3>
+
+        <div class="flex items-center gap-3 bg-bg-light rounded-lg border-2 border-border outline-none hover:border-action transition-all duration-250 ease-out p-4">
             <input id="global" {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
-            <label for="global">
-                Global — apply to all customers using this technology
+            <label for="global" class="text-text-muted">
+                Will apply to all customers using this technology
             </label>
         </div>
     </div>
-
 
     <div class="mt-5">
         <h3 class="text-xl mb-2">
             Fine Tune Entry:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light rounded-lg p-4">
             <textarea
                 rows="4"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.after.as("text")}
             ></textarea>
         </div>
@@ -134,9 +147,9 @@
             Analyst:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light rounded-lg p-4">
             <select
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.analystID.as("select")}
             >
                 {#each analysts as analyst}
@@ -152,10 +165,10 @@
         <h3 class="text-xl mb-2">
             Comment:
         </h3>
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light  rounded-lg p-4">
             <textarea
                 rows="4"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.comment.as("text")}
             ></textarea>
         </div>

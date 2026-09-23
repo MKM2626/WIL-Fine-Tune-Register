@@ -2,7 +2,8 @@
 	import { getAnalysts, getFineTune, createForm, search } from "#lib/remote/registers.remote";
     import { getSearchContext } from "#lib/context/search";
 	import { goto } from "$app/navigation";
-
+    import { toast } from '#lib/components/toast.svelte.js'
+    import ComboBox from '#lib/components/comboBox.svelte'
 
     const searchInfo = getSearchContext()
 
@@ -31,6 +32,11 @@
 		createForm.fields.analystID.set(fineTune.analystId);
 		createForm.fields.finalised.set(fineTune.finalised);
     })
+
+    function submit() {
+        search(searchInfo).refresh()
+        toast.send('Saved')
+    }
 </script>
 
 <form {...createForm} class="max-w-5xl">
@@ -45,15 +51,15 @@
             <button 
                 type="button"
                 onclick={()=>goto(`/details/${params.id}`)}
-                class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Cancel
             </button>
 
             <button
                 type="submit"
-                onclick={()=>search(searchInfo).refresh()}
-                class="px-4 py-2 rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                onclick={()=>submit()}
+                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Save
             </button>
@@ -63,7 +69,7 @@
     <input type="hidden" {...createForm.fields.ruleID.as("select")} />
     <input type="hidden" {...createForm.fields.customerID.as("select")} />
 
-    <div class="bg-bg-light border border-border rounded-lg p-5 flex flex-col gap-3">
+    <div class="bg-bg-light rounded-lg p-5 flex flex-col gap-3">
         <div class="flex">
             <span class="w-32 text-text-muted">
                 Rule:
@@ -100,7 +106,7 @@
             Global:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4 flex items-center gap-3">
+        <div class="bg-bg-light rounded-lg p-4 flex items-center gap-3">
         
             <input {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>  
             <label for='global'>
@@ -114,7 +120,7 @@
             Finalised:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4 flex items-center gap-3">
+        <div class="bg-bg-light rounded-lg p-4 flex items-center gap-3">
         
             <input {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>  
             <label for='global'>
@@ -128,10 +134,10 @@
             Fine Tune Entry:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light rounded-lg p-4">
             <textarea
                 rows="4"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.after.as("text")}
             ></textarea>
         </div>
@@ -142,9 +148,9 @@
             Analyst: 
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light  rounded-lg p-4">
             <select
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.analystID.as("select")}
             >
                 {#each analysts as analyst}
@@ -160,10 +166,10 @@
         <h3 class="text-xl mb-2">
             Comment:
         </h3>
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light  rounded-lg p-4">
             <textarea
                 rows="4"
-                class="w-full px-3 py-2 rounded-lg bg-bg border border-border outline-none"
+                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.comment.as("text")}
             ></textarea>
         </div>
