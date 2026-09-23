@@ -94,13 +94,13 @@
 
         <span class="inline-flex items-center gap-1.5 text-text-muted">
             <CalendarDays size={14} />
-            Created {row.date.toISOString()}
+            Created {row.date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: "numeric", minute: "numeric", second: "numeric" })}
         </span>
 
         {#if row.expiryDate}
             <span class="inline-flex items-center gap-1.5 {expired ? 'text-red-400' : 'text-text-muted'}">
                 <CalendarClock size={14} />
-                {expired ? 'Expired' : 'Expires'} {row.expiryDate.toISOString()}
+                {expired ? 'Expired' : 'Expires'} {row.expiryDate.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: "numeric", minute: "numeric", second: "numeric" })}
             </span>
         {/if}
 
@@ -162,7 +162,7 @@
 
     <!-- Rule change / diff area -->
     <section class="border-t border-border px-5 py-3">
-        <p class="mb-2 text-xs font-medium text-text-muted">{isInitial ? 'Initial rule' : 'Rule changes'}</p>
+        <p class="mb-2 text-xs font-medium text-text-muted">{isInitial ? 'Initial rule' : row.globalId && !row.finalised ? 'Rule suggestion' : 'Rule changes'}</p>
 
         <div
             // relative to set position
