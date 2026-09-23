@@ -5,7 +5,7 @@
 
 <div class="text-3xl">
     <p class="text-text-muted">
-        Select a fine tune
+        No results
     </p>
 </div>
 

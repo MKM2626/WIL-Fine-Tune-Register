@@ -319,7 +319,7 @@ export const search = query(searchSchema,
         const sort = data.descending ? desc(fine_tunes.date) : fine_tunes.date
 
         const rows = await db.select({ 
-            id: fine_tunes.id, 
+            id: sql<string>`${fine_tunes.id}`.mapWith(String), 
             date: fine_tunes.date, 
             rule: rules.name, 
             customer: customers.name, 
@@ -342,6 +342,8 @@ export const search = query(searchSchema,
             totalRows,
             totalPages
         };
+
+        
     }
 )
 

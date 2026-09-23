@@ -5,6 +5,7 @@
     import { toast } from '#lib/components/toast.svelte.js'
     import ComboBox from '#lib/components/comboBox.svelte'
     import { authClient } from '#lib/auth-client'
+    import { tabIndentation } from '#lib/utils/keyDownTextArea'
 
     const session = authClient.useSession() 
 
@@ -37,6 +38,7 @@
         search(searchInfo).refresh()
         toast.send('Saved')
     }
+
 </script>
 
 
@@ -51,8 +53,8 @@
         <div class="flex gap-3">
             <button 
                 type="button"
-                onclick={()=>goto(`/`)}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                onclick={()=>history.back()}
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Cancel
             </button>
@@ -60,7 +62,7 @@
             <button
                 type="submit"
                 onclick={()=>submit()}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
             >
                 Save
             </button>
@@ -139,6 +141,7 @@
         <div class="bg-bg-light rounded-lg p-4">
             <textarea
                 rows="4"
+                use:tabIndentation
                 class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.after.as("text")}
             ></textarea>
@@ -170,6 +173,7 @@
         </h3>
         <div class="bg-bg-light  rounded-lg p-4">
             <textarea
+                
                 rows="4"
                 class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
                 {...createForm.fields.comment.as("text")}

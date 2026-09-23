@@ -61,7 +61,7 @@
             <button 
                 type="button"
                 onclick={()=>goto(`/details/${params.id}`)}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Cancel
             </button>
@@ -69,7 +69,7 @@
             <button
                 type="submit"
                 onclick={()=>submit()}
-                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:bg-linear-to-b hover:from-gradient-start hover:to-gradient-end transition"
             >
                 Save
             </button>
