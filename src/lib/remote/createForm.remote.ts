@@ -3,34 +3,40 @@ import { redirect } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
 import { customers, fine_tunes, customer_rules, tags, fine_tune_tags} from "#lib/server/db/schema";
-import { eq, and, sql, ne, inArray } from 'drizzle-orm'
+import { eq, and, ne, inArray } from 'drizzle-orm'
 // import { SvelteSet } from "svelte/reactivity";
 // import { alias } from "drizzle-orm/cockroach-core";
-import { AppError } from "#lib/errors/appError";
-import { getCustomerRules } from '#lib/remote/getCustomerRules.remote' // change to own file
+import { getCustomerRules } from '#lib/remote/getCustomerRules.remote' 
+import { requireRole } from '../server/guard.ts'
+import { error } from '@sveltejs/kit';
 
 // Create customer rule and fine tune, if exist return error, do other validation, maybe redirect to the customer rule?
 const createSchema = type({
-    ruleID: "string.numeric.parse",
-    customerID: "string.numeric.parse",
-    analystID: "string.numeric.parse",
-    after: "string > 0",
+    ruleId: type("string.numeric.parse").configure({ message: () => "Must be selected"}),
+    customerId: type("string.numeric.parse").describe("Customer").configure({ message: () => "Must be selected"}),
+    "name?": type("string").configure({ message: () => "Name must be a string"}),
+    fineTune: type("string > 0").configure({ message: () => "Must not be empty"}),
     global: "boolean = false",
     finalised: "boolean = false",
+    createMultiple: "boolean = false",
     "comment?": "string",
-    "name?": "string",
-    "expiryDate?": "string.date.parse",
-    "tags?": 'string[]', 
+    "expiryDate?": type("string"),
+    "newTags?": 'string[] > 0', 
+    "existingTags?": 'number[]'
 })
 export const createForm = form(
     createSchema,
     async (data) => {
+        const analyst = requireRole('senior')
+
         const comment = data.comment ? data.comment.trim() == "" ? null : data.comment : undefined
         const name = data.name ? data.name.trim() == "" ? null : data.name : undefined
-        const expiryDate = data.expiryDate ? data.expiryDate : undefined
-        const inputTags = data.tags?.length ? data.tags.map(term => term.trim()).filter(term => term!== '') : []
+        const expiryDate = data.expiryDate && data.expiryDate.trim() !== '' ? new Date(data.expiryDate) : undefined
+        const inputTags = data.newTags?.length ? data.newTags.map(term => term.trim()).filter(term => term!== '') : []
+        let tagIds: number[] = [...(data.existingTags ?? [])]
         const globalId = data.global ? crypto.randomUUID() : undefined
-        const finalisedAnalystId = data.finalised ? data.analystID : undefined
+        const finalisedAnalystId = data.finalised ? analyst.analystId : undefined
+
 
         let createCustomerRule = {} as { id: number }
         let createFineTune = {} as { id: number }
@@ -38,22 +44,18 @@ export const createForm = form(
         // TODO: more error handlers
         // Maybe put more error codes on stuff
         // No previous fine tune id insert, as these are creating all new customer rules, and new fine tunes
-        try {
+
             await db.transaction(async (tx) => {
-                createCustomerRule = await tx.insert(customer_rules).values({ ruleId: data.ruleID, customerId: data.customerID}).onConflictDoNothing().returning({ id: customer_rules.id}).get()
+                createCustomerRule = await tx.insert(customer_rules).values({ ruleId: data.ruleId, customerId: data.customerId}).onConflictDoNothing().returning({ id: customer_rules.id}).get()
 
                 if (!createCustomerRule) {
-                    throw new AppError(
-                        'Customer rule already exists.',
-                        'CREATE_CUSTOMER_RULE',
-                        409
-                    )
+                    error(409, "Customer rule already exists")
                 }
 
                 createFineTune = await tx.insert(fine_tunes).values({
                     customerRuleId: createCustomerRule.id, 
-                    analystId: data.analystID,
-                    fineTune: data.after,
+                    analystId: analyst.analystId,
+                    fineTune: data.fineTune,
                     comment: comment,
                     expiryDate: expiryDate,
                     finalised: data.finalised,
@@ -61,35 +63,36 @@ export const createForm = form(
                     globalId: globalId,
                     name: name,
                     // TODO Might be a better code way, using subquery?
-                    version: sql`COALESCE(( SELECT MAX(${fine_tunes.version}) FROM ${fine_tunes} WHERE ${fine_tunes.customerRuleId} = ${createCustomerRule.id} ), 0) + 1`
+                    version: 1 // brand new customer rule should only have 1
                 }).returning({ id: fine_tunes.id}).get()
 
-                let tagIds: { tagId: number }[] = []
 
                 if (inputTags.length > 0 ) {
                     await tx.insert(tags).values(inputTags.map((name) => ({name}))).onConflictDoNothing()
-                    tagIds = await tx.select({tagId: tags.id}).from(tags).where(inArray(tags.name, inputTags))
+                    const found = await tx.select({id: tags.id}).from(tags).where(inArray(tags.name, inputTags))
+                    tagIds.push(...found.map((tag) => tag.id))
                 }
 
-                await tx.delete(fine_tune_tags).where(eq(fine_tune_tags.fineTuneId, createFineTune.id))
+                tagIds = [...new Set (tagIds)] // no duplicates
 
-                if (inputTags.length > 0) {
-                    await tx.insert(fine_tune_tags).values(tagIds.map(({ tagId }) => ({ fineTuneId: createFineTune.id, tagId})))
+
+                if (tagIds.length > 0) {
+                    await tx.insert(fine_tune_tags).values(tagIds.map(( tagId ) => ({ fineTuneId: createFineTune.id, tagId})))
                 }
 
-                if (data.global) {
+
+
+                if (data.global) { 
+
+                    
                     const technology = await tx
                         .select({ id: customers.technologyId })
                         .from(customers)
-                        .where(eq(customers.id, data.customerID))
+                        .where(eq(customers.id, data.customerId))
                         .get();
 
                     if (!technology) {
-                        throw new AppError(
-                            'Database failed to find selected customer.',
-                            'CREATE_CUSTOMER_RULE',
-                            500
-                        )
+                        error(404, "Database failed to find selected customer")
                     }
 
                     // Find all customers with same technology id
@@ -99,70 +102,56 @@ export const createForm = form(
                         .where(
                             and(
                                 eq(customers.technologyId, technology.id),
-                                ne(customers.id, data.customerID)
+                                ne(customers.id, data.customerId)
                             )
                         )
 
-                    // Make customer rules for all those who don't have a rule yet. If customer rule exists, I ignore it
-                    const globalCustomerRules = await tx
-                        .insert(customer_rules)
-                        .values(globalCustomers.map((customer) => ({
-                                ruleId: data.ruleID,
-                                customerId: customer.id
-                            })))
-                        .onConflictDoNothing()
-                        .returning({ id: customer_rules.id })
 
-                    // Make fine tunes for those customers 
-                    const globalFineTunes = await tx.insert(fine_tunes).values(
-                        globalCustomerRules.map((customerRule) => ({
-                            customerRuleId: customerRule.id,
-                            analystId: data.analystID,
-                            fineTune: data.after,
-                            comment,
-                            expiryDate: expiryDate,
-                            finalised: false,
-                            finalisedAnalystId,
-                            globalId,
-                            name,
-                            // TODO: Make possible sub query
-                            // version: sql<number>`COALESCE( (SELECT MAX(${fine_tunes.version}) FROM ${fine_tunes} WHERE ${fine_tunes.customerRuleId} = ${customerRule.id}), 0) + 1`
-                            version: sql<number>` // ? Should select max version for that customer rule
-                                COALESCE(
-                                    (
-                                        SELECT MAX(${fine_tunes.version})
-                                        FROM ${fine_tunes}
-                                        WHERE ${fine_tunes.customerRuleId} = ${customerRule.id}
-                                    ),
-                                    0
-                                ) + 1`
-                        }))
-                    ).returning({ id: fine_tunes.id})
+                    if (globalCustomers.length > 0) {
 
-                    const globalFineTuneIds = globalFineTunes.map((ft) => ft.id)
+                        // Make customer rules for all those who don't have a rule yet. If customer rule exists, I ignore it
+                        const globalCustomerRules = await tx
+                            .insert(customer_rules)
+                            .values(globalCustomers.map((customer) => ({
+                                    ruleId: data.ruleId,
+                                    customerId: customer.id
+                                })))
+                            .onConflictDoNothing()
+                            .returning({ id: customer_rules.id })
 
-                    // TODO: Might be a better way then deleting all the fine tunes and then reassigning
-                    await tx.delete(fine_tune_tags).where(inArray(fine_tune_tags.fineTuneId, globalFineTuneIds))
 
-                    if (inputTags.length > 0) {
-                        await tx.insert(fine_tune_tags).values( globalFineTunes.flatMap((ft) => tagIds.map(({tagId}) => ({ fineTuneId: ft.id, tagId}))))
+                        if (globalCustomerRules.length > 0) {
+                            // Make fine tunes for those customers 
+                            const globalFineTunes = await tx.insert(fine_tunes).values(
+                                globalCustomerRules.map((customerRule) => ({
+                                    customerRuleId: customerRule.id,
+                                    analystId: analyst.analystId,
+                                    fineTune: data.fineTune,
+                                    comment,
+                                    expiryDate: expiryDate,
+                                    finalised: false,
+                                    finalisedAnalystId,
+                                    globalId,
+                                    name,
+                                    // TODO: Make possible sub query
+                                    version: 1 // Brand new customer rule, so only be 1
+                                }))
+                            ).returning({ id: fine_tunes.id})
+
+                            if (tagIds.length > 0) {
+                                await tx.insert(fine_tune_tags).values( globalFineTunes.flatMap((ft) => tagIds.map((tagId) => ({ fineTuneId: ft.id, tagId}))))
+                            }
+                        }
                     }
-
+                
                 }
             })// End transaction
-        } catch(error) {
-            if (error instanceof AppError) throw error;
-
-            throw new AppError(
-                'Failed to create customer rule.',
-                'CREATE_CUSTOMER_RULE',
-                500
-            )
-        }
 
         for await (const { query } of requested(getCustomerRules, 1)) {
             query.refresh();
         }
+        if (data.createMultiple) return
+
         redirect(303, `/details/${createCustomerRule.id}?fineTune=${createFineTune.id}`)
     }
 )
