@@ -292,11 +292,14 @@
         resetPage()
     }
     
-    async function delFt(fineTuneId: string) {
+    async function delFt(fineTuneId: string, index: number) {
         if (deleting) return 
-        if (atLeast($session.data?.user.role, 'senior')) return
+        if (!atLeast($session.data?.user.role, 'senior')) return
         
         deleting = true
+
+        const deletedRule = rows[index]
+
 
         try {
             await deleteFineTune(fineTuneId).updates(
@@ -304,22 +307,24 @@
                     ...results
                 }))
             )
-
-            toast.success('Deleted')
+            
+            rows.splice(index, 1)
         }
         catch (error) {
             handleError(error)
             history.back()
-            
+            rows.splice(index, 0, deletedRule)
         }
        finally {
             deleting=false
+            if (filterCount == 0 && rows.length == 0 && startPage == 1) goto(`/details/${next.id}`)
+            toast.success('Deleted')
        }
     }
 
     async function delRule() {
         if (deleting) return
-        if (atLeast($session.data?.user.role, 'admin')) return
+        if (!atLeast($session.data?.user.role, 'admin')) return
 
         deleting = true
 
@@ -344,7 +349,7 @@
 
     async function finalise() {
         if (finalising) return
-        if (atLeast($session.data?.user.role, 'senior')) return
+        if (!atLeast($session.data?.user.role, 'senior')) return
 
 
 
@@ -360,9 +365,11 @@
             if (ftSearchInfo.finalised !== undefined) goto(`/details/${next.id}`)
             
             toast.success('Finalised')
+            rows[0].finalised = true
         } catch (error) {
             handleError(error)
             history.back()
+            rows[0].finalised = false
         }
         finally {
             finalising = false
@@ -390,13 +397,15 @@
             
         {/if}
         
-        <button 
-            class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
-            onclick={()=> goto(`/details/${id}/update`)}
-        >
-            <RefreshCw />
-        </button>
-
+        {#if rows[0]?.finalised && startPage == 1 && ftSearchInfo.descending == true}
+            <button 
+                class="px-4 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+                onclick={()=> goto(`/details/${id}/${rows[0].id}/update`)}
+            >
+                <RefreshCw />
+            </button>
+        {/if}
+        
         <!-- Need to call pop up component to confirm customer rule delete -->
         {#if atLeast($session.data?.user.role, 'admin')}
             <button 
@@ -570,7 +579,7 @@
                 title={customerRuleDetails.date.toLocaleString()}
             >
                 <CalendarDays size={14} />
-                Rule created {customerRuleDetails.date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                Rule created {customerRuleDetails.date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: "numeric", minute: "numeric", second: "numeric" })}
             </span>
         </div>
 
@@ -617,13 +626,17 @@
 <div class="overflow-y-scroll">
 
     <div class="">
+
         {#each rows as row, index (row.id)}
-            <FineTuneCard
-                {row}
-                onedit={(r) => goto(`/details/${id}/edit/${r.id}`)}
-                ondelete={(r) => delFt(r.id)}
-                selectedId={results.selectedId}
-            />
+            {#key row}
+                <FineTuneCard
+                    {row}
+                    onedit={(r) => goto(`/details/${id}/${r.id}/edit`)}
+                    ondelete={(r) => delFt(r.id, index)}
+                    selectedId={results.selectedId}
+                />
+            {/key}
+            
 
             {#if index + 1 < rows.length}
                 <!-- your existing connector code, unchanged -->
@@ -653,6 +666,7 @@
                 {/if}
             {/if}
         {/each}
+        
 
         {#if endPage < results.totalPages}
             <div class="flex justify-center pt-4 pb-2">
