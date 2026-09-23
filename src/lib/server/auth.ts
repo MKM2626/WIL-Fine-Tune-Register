@@ -5,7 +5,9 @@ import { error } from '@sveltejs/kit'
 import { getRequestEvent } from "$app/server"
 import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BETTER_AUTH_TRUSTED_ORIGINS, ORGANISATION } from '$app/env/private'
 import { ROLES, type Role} from '#lib/roles'
-
+import { db } from '#lib/server/db/index'
+import { analysts } from './db/schema.ts'
+import { sql } from 'drizzle-orm';
 
 async function getGithubRole(login: string, headers: RequestInit): Promise<Role | null> {
     for (const role of ROLES) {
@@ -44,7 +46,7 @@ export const auth = betterAuth({
             analystId: {
                 type: "number",
                 required: true,
-                input: false
+                input: true
             }
         }
     },
@@ -77,6 +79,8 @@ export const auth = betterAuth({
 
                 const profile = await userResponse.json();
 
+
+
                 // Should change to set to highest clearance
                 // Team names should be an environment variable
                 // const teamNames = ["Admin", "Senior", "Junior"];
@@ -101,6 +105,18 @@ export const auth = betterAuth({
 
 
 
+                const [inserted] = await db.insert(analysts).values({ githubId: profile.id, email: profile.email ?? `${profile.id}@github.placeholder.invalid`, name: profile.name ?? profile.login})
+                    .onConflictDoUpdate({
+                        target: analysts.githubId, 
+                        set: {
+                            email: sql`excluded.email`,
+                            name: sql`excluded.name`
+                        }
+                    })
+                    .returning({ id: analysts.id})
+
+                
+
                 return {
                     user: {
                         name: profile.name ?? profile.login,
@@ -108,6 +124,7 @@ export const auth = betterAuth({
                         image: profile.avatar_url,
                         emailVerified: true,
                         role: role, 
+                        analystId: inserted.id
 
                     },
                     data: profile
