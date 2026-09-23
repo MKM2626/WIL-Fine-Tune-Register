@@ -5,6 +5,7 @@
     import { goto } from "$app/navigation"
     import { setSearchContext, type SearchInfo } from "#lib/context/search";
     import  Toast  from '#lib/components/Toast.svelte'
+    import { downloadCSV } from '#lib/downloadCSV';
 
 
     // The results from call
@@ -159,8 +160,9 @@
 
                 <div class="gap-3">
                     <button 
+                        type="button"
                         class="px-4 py-2 font-bold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-    
+                        onclick={()=>downloadCSV(searchInfo)}
                     >
                         Export
                     </button>
@@ -266,7 +268,7 @@
             
 
         <div class="flex-1 overflow-y-auto flex flex-col gap-3">
-            {#each (await search(searchInfo)).rows as row}
+            {#each (await results).rows as row}
                 <button
                     class="px-5 py-3 bg-bg-light rounded-lg text-wrap text-left transition-all duration-250 ease-out border-l-0 border-l-bg-light hover:brightness-125
                         {selectedId == row.id ? "border-l-5 border-l-indigo-500" : " "}"
