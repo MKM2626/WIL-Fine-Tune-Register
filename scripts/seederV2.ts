@@ -106,25 +106,49 @@ async function seed() {
         console.log("Creating rules...")
         const insertedRules = await tx  
             .insert(rules)
-            .values(Array.from({ length: RULE_COUNT }, () => ({ name: faker.company.catchPhrase()})))
+            .values(Array.from({ length: RULE_COUNT }, () => ({ name: faker.git.commitMessage()})))
             .returning()
         console.log(`   - ${insertedRules.length} rules`)
 
 
         // Analysts
         console.log("Creating analysts...")
+        // const insertedAnalysts = await tx
+        //     .insert(analysts)
+        //     .values( Array.from({length: ANALYST_COUNT}, () => ({ email: faker.internet.email(), githubId: faker.number.int({min: 1000000, max: 9999999}), name: faker.person.fullName()})) )
+        //     .returning()
+        const uniqueAnalysts = []
+        const seenEmails = new Set()
+        const seenGithubIds = new Set()
+        while (uniqueAnalysts.length < ANALYST_COUNT) {
+            const githubId = faker.number.int({min: 1000000, max: 9999999})
+            const email = faker.internet.email()
+
+            if (!seenEmails.has(email) || !seenGithubIds.has(githubId)) {
+                seenEmails.add(email)
+                seenGithubIds.add(githubId)
+
+                uniqueAnalysts.push({
+                    email,
+                    githubId,
+                    name: faker.person.fullName()
+                })
+            }
+        }
         const insertedAnalysts = await tx
             .insert(analysts)
-            .values( Array.from({length: ANALYST_COUNT}, () => ({ email: faker.internet.email(), name: faker.person.fullName()})) )
+            .values(uniqueAnalysts)
             .returning()
         console.log(`   - ${insertedAnalysts.length} analysts`)
 
 
         // Tags
         console.log("Creating tags...")
+        const uniqueTagNames = faker.helpers.uniqueArray(() => faker.book.series(), TAG_COUNT)
         const insertedTags = await tx
             .insert(tags)
-            .values(Array.from({ length: TAG_COUNT}, () => ({ name: faker.lorem.word()})))
+            // .values(Array.from({ length: TAG_COUNT}, () => ({ name: faker.lorem.word()})))
+            .values(uniqueTagNames.map(name => ({ name })))
             .returning()
         console.log(`   - ${insertedTags.length} tags`)
 
