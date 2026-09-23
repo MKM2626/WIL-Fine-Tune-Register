@@ -52,7 +52,7 @@ export const auth = betterAuth({
     },
 
     // use stateless with secondary storage to be able to revoke session on refresh 
-    trustedOrigin: [BETTER_AUTH_TRUSTED_ORIGINS],
+    trustedOrigin: BETTER_AUTH_TRUSTED_ORIGINS.split(","),
 
     socialProviders: { 
         github: {
