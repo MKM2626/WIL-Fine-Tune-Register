@@ -20,7 +20,8 @@ export const customers = sqliteTable("customers", {
 
 export const analysts = sqliteTable("analysts", {
 	id: integer().primaryKey({ autoIncrement: true }),
-	email: varchar({ length: 254 }).notNull(),
+	githubId: integer().notNull().unique(),
+	email: varchar({ length: 254 }).notNull().unique(),
 	name: varchar({ length: 255}).notNull(),
 });
 
