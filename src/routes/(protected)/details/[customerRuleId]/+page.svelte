@@ -17,7 +17,7 @@
 	import { diffWords } from "diff";
 	import { SvelteSet } from "svelte/reactivity";
     import { CalendarArrowDown, CalendarArrowUp, X, ListFilter, RefreshCw, SquareCheckBig, Trash, CalendarDays, Globe, CircleX, CircleCheck, ChevronDown, ChevronUp } from '@lucide/svelte/icons'
-	import FilterToggle from "#lib/components/FilterToggle.svelte";
+    import FilterToggle from "#lib/components/FilterToggle.svelte";
 	import FineTuneCard from "#lib/components/FineTune.svelte";
 	import { finaliseCustomerRule } from "#lib/remote/finaliseCustomerRule.remote";
     import ConfirmPopUp from "#lib/components/ConfirmPopUp.svelte"
