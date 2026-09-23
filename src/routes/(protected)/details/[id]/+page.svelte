@@ -4,8 +4,10 @@
     import { goto } from "$app/navigation";
     import { diffWords } from 'diff';
     import { fade, fly, slide } from 'svelte/transition';
-    // import { showToast } from '#lib/components/toast.svelte.js';
     import { toast } from '#lib/components/toast.svelte.js'
+    import { authClient } from '#lib/auth-client'
+
+    const session = authClient.useSession() 
 
     let { params } = $props();
     let id =$derived(params.id);
@@ -77,10 +79,10 @@
 
 
     async function del() {
+        if (!$session.data?.user.teams.includes('admin')) return
         if (deleting) return 
 
         deleting = true
-
 
         try {
             await deleteRow(id)
@@ -117,14 +119,16 @@
             Update
         </button>
 
-        <button 
-
-            class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
-            onclick={()=>del()}
-            disabled={deleting}
-        >
-            Delete
-        </button>
+        {#if $session.data?.user.teams.includes('admin')}
+            <button 
+                class="px-4 py-2 font-bold rounded-lg bg-bg-light border border-border hover:brightness-125 transition"
+                onclick={()=>del()}
+                disabled={deleting}
+            >
+                Delete
+            </button>
+        {/if}
+        
     </div>
 </div>
 
@@ -197,7 +201,7 @@
             Finalised: 
         </span>
         {#key params.id}
-            <input type="checkbox" checked={selectedFineTune.finalised} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+            <input type="checkbox" checked={selectedFineTune.finalised} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         {/key}
     </div>
         
@@ -209,7 +213,7 @@
             Global: 
         </span>
         {#key params.id}
-            <input type="checkbox" checked={selectedFineTune.global} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+            <input type="checkbox" checked={selectedFineTune.global} disabled in:fade={{ duration: moveIn, delay: delay }} out:fade={{ duration: moveOut}} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         {/key}
     </div>
         

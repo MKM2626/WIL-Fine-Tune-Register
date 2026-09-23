@@ -122,15 +122,16 @@
                     Finalised: 
                 </span>
 
-                <input type="checkbox" checked={fineTune.finalised} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+                <input type="checkbox" checked={fineTune.finalised} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
             </div>
         {/if}
 
+        
         <div class="flex">
             <span class="w-32 text-text-muted">
                 Global: 
             </span>
-            <input type="checkbox" checked={fineTune.global} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
+            <input type="checkbox" checked={fineTune.global} disabled class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
         </div>
     </div>
 
@@ -183,7 +184,7 @@
             Analyst:
         </h3>
 
-        <div class="bg-bg-light border border-border rounded-lg p-4">
+        <div class="bg-bg-light  rounded-lg p-4">
             <select
                 id="analyst"
                 class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action outline-none"
@@ -205,10 +206,6 @@
             onSelect={(analyst) => editForm.fields.analystId.set(analyst.id)}
         ></ComboBox> -->
     </div>
-
-    
-    
-
 
     <div class="mt-5">
         <h3 class="text-xl mb-2">

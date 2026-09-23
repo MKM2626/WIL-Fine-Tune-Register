@@ -28,7 +28,6 @@
 // 	return toast;
 // }
 
-// toast.svelte.ts
 export type ToastType = 'success' | 'error';
 
 export interface ToastItem {
@@ -38,14 +37,12 @@ export interface ToastItem {
 }
 
 class ToastManager {
-    // Reactive array holding active toasts
     list = $state<ToastItem[]>([]);
 
-    send(message: string, type: ToastType = 'success', duration = 1500) {
+    send(message: string, type: ToastType = 'success', duration = 6000) {
         const id = crypto.randomUUID();
-        this.list.push({ id, message, type });
+        this.list.unshift({ id, message, type });
 
-        // Auto-dismiss after duration
         setTimeout(() => this.dismiss(id), duration);
     }
 
@@ -54,5 +51,4 @@ class ToastManager {
     }
 }
 
-// Export a single instance to use across files
 export const toast = new ToastManager();
