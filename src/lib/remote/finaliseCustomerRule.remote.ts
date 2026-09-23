@@ -1,26 +1,18 @@
 import { fine_tunes } from "../server/db/schema.ts";
-import { command, requested, getRequestEvent } from "$app/server";
+import { command, requested } from "$app/server";
 import { getCustomerRules } from "./getCustomerRules.remote.ts";
 import { type } from "arktype";
 import { db } from '../server/db/index.ts'
 import { max, eq, and } from "drizzle-orm";
-import { AppError } from "../errors/appError.ts";
 import { alias } from "drizzle-orm/sqlite-core";
-
+import { requireRole } from "../server/guard.ts";
+import { error } from "@sveltejs/kit";
 
 const finaliseSchema = type("string.numeric.parse") 
 export const finaliseCustomerRule = command(finaliseSchema, async (crId) => {
 
 
-    const event = getRequestEvent()
-
-    if (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior')) {
-        throw new AppError(
-            'You are not authorised',
-            'FINALISE_CUSTOMER_RULE',
-            401
-        )
-    }
+    requireRole('senior')
 
     
 
@@ -40,11 +32,7 @@ export const finaliseCustomerRule = command(finaliseSchema, async (crId) => {
             
 
     if (result.length === 0) {
-        throw new AppError(
-            'Failed to finalise customer rule',
-            'FINALISE_CUSTOMER_RULE',
-            401
-        )
+        error(401, 'Failed to finalise customer rule')
     }
 
     for await (const { query } of requested(getCustomerRules, 1)) {
