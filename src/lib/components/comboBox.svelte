@@ -6,18 +6,28 @@
 
     let {
         options,
-
         placeholder = 'Select...',
+        selected = undefined,
         onSelect
     }: {
         options: Option[];
-
         placeholder?: string;
+        selected?: string;
         onSelect: (option: Option) => void;
     } = $props();
 
     let open = $state(false);
     let search = $state('');
+
+    $effect(() => {
+		if (selected) {
+			const option = options.find((option) => option.id === selected);
+
+			if (option) {
+				search = option.name;
+			}
+		}
+	});
 
     let filteredOptions = $derived(
         options.filter((option) =>
@@ -26,17 +36,19 @@
     );
 
     function selectOption(option: Option) {
+        onSelect(option);
         search = option.name;
         open = false;
-        onSelect(option);
+        
     }
 </script>
 
 <div class="relative">
-    <div class="bg-bg-light rounded-lg p-4">
+    <div class="">
         <input
             type="text"
             bind:value={search}
+
             placeholder={placeholder}
             onfocus={() => open = true}
             onblur={() => open = false}
@@ -44,13 +56,14 @@
                 if (event.key === 'Enter') {
                     event.preventDefault();
                 }
+
             }}
             class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action outline-none"
         />
     </div>
 
     {#if open}
-        <div class="pb-8">
+        <div>
             <div class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-lg bg-bg-light border border-border shadow-lg">
                 {#if filteredOptions.length > 0}
                     {#each filteredOptions as option}

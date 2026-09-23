@@ -24,14 +24,14 @@ const session: Handle = async ({ event, resolve }) => {
 
 const route_guard: Handle = async ({ event, resolve }) => {
     if (event.route.id?.startsWith('/(protected)') && !event.locals.session) {
-        redirect(303, 'login')
+        redirect(303, '/login')
     }
 
     if (event.locals.user?.teams.length === 0 && event.locals.session) {
         error(401, "You are not permitted to access this service")
     }
 
-    if (event.route.id?.startsWith('/(protected)/create') && !event.locals.user?.teams.includes('admin') && !event.locals.user?.teams.includes('senior')) {
+    if (event.route.id?.startsWith('/(protected)/create') && (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior'))) {
         error(403, 'You are not permitted to create a new rule');
     }
 
