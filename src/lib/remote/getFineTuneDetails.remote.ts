@@ -37,7 +37,6 @@ const GetFTDetailsSchema = type({
 
 
 export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
-    console.log(data)
     const cleanSearchSet = (set: SvelteSet<string> | undefined) => {
             if (!set?.size) return [];
             const result = [];
@@ -81,7 +80,7 @@ export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
                 like(fine_tunes.comment, `%${term}%`),
                 like(tags.name, `%${term}%`), 
                 
-                Number.isInteger(Number(term)) ? eq(fine_tunes.version, Number(term)) : undefined
+                /^\d+$/.test(term) ? eq(fine_tunes.version, Number(term)) : undefined
             ))
         ) : undefined,
 
@@ -147,7 +146,6 @@ export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
             // .where(and(where, eq(fine_tunes.id, data.fineTuneId)))
             // .get();
 
-            console.log()
 
         if (!selected) error(404, "Fine Tune does not exist.")
 
@@ -232,8 +230,7 @@ export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
         .offset((page - 1) * data.pageSize)
 
 
-    
-    console.log(rows.slice(-2))
+
 
     
 
