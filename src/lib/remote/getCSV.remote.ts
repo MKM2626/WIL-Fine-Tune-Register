@@ -6,7 +6,7 @@ import { analysts, customers, fine_tunes, technologies, rules, tags, fine_tune_t
 import { eq, and, desc, like, or, gte, lte, max, isNotNull, isNull, exists, asc, sql } from 'drizzle-orm'
 import { SvelteSet } from "svelte/reactivity";
 import { alias } from "drizzle-orm/sqlite-core";
-import { AppError } from "#lib/errors/appError";
+import { error } from "@sveltejs/kit";
 // import { SvelteSet } from "svelte/reactivity";
 // import { alias } from "drizzle-orm/cockroach-core";
 // import { AppError } from "#lib/errors/appError";
@@ -273,11 +273,7 @@ export const getCSV = query(
 
 
         if (!rows) {
-            throw new AppError(
-                'Database failed to find results',
-                'GET_CSV',
-                400
-            )
+            error(400, 'Database failed to find results')
         }
 
 
