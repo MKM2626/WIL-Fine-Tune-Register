@@ -13,6 +13,7 @@
 	import { slide } from 'svelte/transition';
     import { LogOut, Download, SquarePlus, CalendarArrowDown, CalendarArrowUp, X, ListFilter, ChevronsLeft, ChevronsRight, CalendarDays, CalendarClock, Globe, CircleCheck, CircleX} from '@lucide/svelte/icons'
     import { atLeast } from '#lib/roles'
+    import { page } from '$app/state';
 
     // Session
     const session = authClient.useSession() 
@@ -80,7 +81,7 @@
     let results = $derived(await getCustomerRules(crSearchInfo))
 
     onMount(() => {
-        if (results) {
+        if (results && page.url.pathname ==='/') {
             goto(`/details/${results.rows[0].id}`)
         }
     })
