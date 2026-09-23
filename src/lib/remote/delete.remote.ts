@@ -1,4 +1,4 @@
-import { command, requested, getRequestEvent } from "$app/server";
+import { command, requested } from "$app/server";
 // import { error, redirect } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
@@ -6,9 +6,10 @@ import { fine_tunes, customer_rules, fine_tune_tags} from "#lib/server/db/schema
 import { eq } from 'drizzle-orm/sqlite-core/expressions'
 // import { SvelteSet } from "svelte/reactivity";
 // import { alias } from "drizzle-orm/cockroach-core";
-import { AppError } from "#lib/errors/appError";
 import { getCustomerRules } from '#lib/remote/getCustomerRules.remote'
 import { count, inArray } from "drizzle-orm";
+import { requireRole } from '../server/guard'
+import { error, isHttpError } from "@sveltejs/kit";
 
 // TODO: change to new role selector
 // TODO: put new restriction request on this
@@ -17,17 +18,9 @@ import { count, inArray } from "drizzle-orm";
 const dSchema = type("string.numeric.parse")
 export const deleteFineTune = command(dSchema, async (ftId) => {
 
-    const event = getRequestEvent()
-
-    if (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior') ) {
-        throw new AppError(
-            'You are not authorised',
-            'DELETE_FINE_TUNE',
-            401
-        )
-    }
+    requireRole('senior')
     
-    try{
+    try {
         await db.transaction(async (tx) => {
             const selectedFineTune = await tx
                 .select({ prev: fine_tunes.previousFineTuneId, crId: fine_tunes.customerRuleId })
@@ -35,7 +28,7 @@ export const deleteFineTune = command(dSchema, async (ftId) => {
                 .where(eq(fine_tunes.id, ftId))
                 .get()
 
-            if (!selectedFineTune) throw new AppError('Fine tune not found.', 'FINE_TUNE_DELETE');
+            if (!selectedFineTune) error(404, 'Fine tune not found');
 
             await tx.update(fine_tunes).set({ previousFineTuneId: selectedFineTune.prev })
                 .where(eq(fine_tunes.previousFineTuneId, ftId));
@@ -50,30 +43,20 @@ export const deleteFineTune = command(dSchema, async (ftId) => {
                 await tx.delete(customer_rules).where(eq(customer_rules.id, selectedFineTune.crId));
             }
         });
-    } catch (error) {
-        if (error instanceof AppError) throw error
-
-        throw new AppError(
-            'Failed to delete fine tune',
-            'DELETE_FINE_TUNE',
-            500
-        )
     }
+    catch (err) {
+        if (isHttpError(error) && error.status < 500) throw err
+
+        throw error(404, 'Failed to delete fine tune')
+    }
+
 
     for await (const { query } of requested(getCustomerRules, 1)) query.refresh()
 })
 
 export const deleteCustomerRule = command(dSchema, async (crId) => {
 
-    const event = getRequestEvent()
-
-    if (!event.locals.user?.teams.includes('admin') || !event.locals.user?.teams.includes('senior') ) {
-        throw new AppError(
-            'You are not authorised',
-            'DELETE_CUSTOMER_RULE',
-            401
-        )
-    }
+    requireRole('senior')
 
     try {
         await db.transaction(async (tx) => {
@@ -86,14 +69,10 @@ export const deleteCustomerRule = command(dSchema, async (crId) => {
                 .where(eq(customer_rules.id, crId))
                 .returning({ id: customer_rules.id })
         })
-    } catch (error) {
-        if (error instanceof AppError) throw error
+    } catch (err) {
+        if (isHttpError(error) && error.status < 500) throw err
 
-        throw new AppError(
-            'Failed to delete customer rule',
-            'DELETE_CUSTOMER_RULE',
-            500
-        )
+        throw error(404, 'Failed to delete customer rule')
     }
 
     for await (const { query } of requested(getCustomerRules, 1)) {
