@@ -1,4 +1,5 @@
 <script lang="ts">
+
     type Option = {
         id: string;
         name: string;
@@ -8,38 +9,49 @@
         options,
         placeholder = 'Select...',
         selected = undefined,
-        onSelect
+        onSelect,
+        onClear,
     }: {
         options: Option[];
         placeholder?: string;
         selected?: string;
         onSelect: (option: Option) => void;
+        onClear?: () => void;
     } = $props();
 
     let open = $state(false);
-    let search = $state('');
+    let chosen = $derived<string | number | undefined>(undefined)
 
     $effect(() => {
-		if (selected) {
-			const option = options.find((option) => option.id === selected);
+        chosen = selected
+	})
 
-			if (option) {
-				search = option.name;
-			}
-		}
-	});
+    let chosenName = $derived(
+        options.find((option) => String(option.id) === String(chosen))?.name ?? ''
+    )
+
+    let search = $derived(chosenName);
 
     let filteredOptions = $derived(
-        options.filter((option) =>
-            option.name.toLowerCase().includes(search.toLowerCase())
-        )
+        search === chosenName
+            ? options
+            : options.filter((option) => option.name.toLowerCase().includes(search.toLowerCase()))
     );
 
     function selectOption(option: Option) {
-        onSelect(option);
-        search = option.name;
-        open = false;
-        
+        chosen = option.id
+        search = option.name
+        onSelect(option)
+        open = false
+    }
+
+    function leave() {
+        if (search.trim() === '' && chosen !== undefined) {
+            chosen = undefined
+            onClear?.()
+        }
+        search = chosenName
+        open = false
     }
 </script>
 
@@ -47,18 +59,28 @@
     <div class="">
         <input
             type="text"
-            bind:value={search}
-
+            value={search}
+            oninput={(event) => {search = event.currentTarget.value}}
+            onclick={() => open = true}
+            onfocus={(event) => {open = true; event.currentTarget.select()}}
             placeholder={placeholder}
-            onfocus={() => open = true}
-            onblur={() => open = false}
+            onblur={leave}
             onkeydown={(event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
+
+                    if (open && search !== chosenName && filteredOptions.length > 0) {
+                        selectOption(filteredOptions[0])
+                    }
+                }
+
+                if (event.key == `Escape`) {
+                    search = chosenName
+                    open = false
                 }
 
             }}
-            class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action outline-none"
+            class="w-full px-3 py-2 rounded-lg bg-bg border border-border hover:border-action/60 focus:border-action outline-none"
         />
     </div>
 
@@ -66,7 +88,8 @@
         <div>
             <div class="absolute z-10 mt-1 w-full max-h-60 overflow-y-auto rounded-lg bg-bg-light border border-border shadow-lg">
                 {#if filteredOptions.length > 0}
-                    {#each filteredOptions as option}
+                    <!-- * Each option should have a key -->
+                    {#each filteredOptions as option (option.id)} 
                         <button
                             type="button"
                             onmousedown={() => selectOption(option)}

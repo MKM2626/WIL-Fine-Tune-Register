@@ -1,47 +1,90 @@
 <script lang="ts">
     let { children, params } = $props();
-    import { search } from "#lib/remote/registers.remote";
+    import { getCustomerRules } from '#lib/remote/getCustomerRules.remote'
     import { goto } from "$app/navigation";
-    import { setSearchContext, type SearchInfo } from "#lib/context/search";
+    import { setCRSearchContext, type CRSearchInfo } from "#lib/context/customerRuleSearch";
     import Toast from '#lib/components/Toast.svelte'
+    import FilterToggle from '#lib/components/FilterToggle.svelte';
     import { downloadCSV } from '#lib/utils/downloadCSV';
     import { authClient } from '#lib/auth-client'
-    import { setDeleteContext, type DeleteAndProceed } from '#lib/context/deleteAndProceed'
+    import { setNextContext, type crNextRow } from '#lib/context/crNextRow'
     import { onMount } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
+	import { slide } from 'svelte/transition';
+    import { LogOut, Download, SquarePlus, CalendarArrowDown, CalendarArrowUp, X, ListFilter, ChevronsLeft, ChevronsRight, CalendarDays, CalendarClock, Globe, CircleCheck, CircleX} from '@lucide/svelte/icons'
+    import { atLeast } from '#lib/roles'
+    import { page } from '$app/state';
 
+    // Session
     const session = authClient.useSession() 
 
-    let selectedId = $derived<string | null>(params.id ?? null)
-    let searchInfo = $state<SearchInfo>({ page: 1, pageSize: 50, descending: true})
-    let deleteAndProceed = $state<DeleteAndProceed>({ id: null})
+    // Selected id pull
+    let selectedId = $derived<string | null>(params.customerRuleId ?? null)
+    // Search input
+    let crSearchInfo = $state<CRSearchInfo>({ page: 1, pageSize: 50, descending: true, isFineTuneSort: true})
+    // Set next row
+    let deleteAndProceed = $state<crNextRow>({ id: null})
+    
+    // Filter buttons
     let searchFinalised = $state('')
     let searchGlobal = $state('')
+    let searchExpiryDate = $state('')
+    let dateIsFineTune = $state(true)
     let expandedSearch = $state(false)
     
-    setSearchContext(searchInfo)
-    setDeleteContext(deleteAndProceed)
+    // set search and delete context
+    setCRSearchContext(crSearchInfo)
+    setNextContext(deleteAndProceed)
 
-    // Inputs
-    let globalSearchInput = $state('')
-    let startInput = $state('')
-    let endInput = $state('')
+    // Pagination input
     let pageInput = $state(1);
-    let ruleInput = $state('')
-    let customerInput = $state('')
-    let technologyInput = $state('')
-    let analystInput = $state('')
-    let fineTuneInput = $state('')
-    let commentInput = $state('')
 
-    let results = $derived(await search(searchInfo))
+    // dates inputs
+    let startDateInput = $state('')
+    let endDateInput = $state('')
+
+    
+
+    // search fields
+    const filterFields = [
+        { key: 'search', label: 'Any field', prefix: 'Any' },
+
+        { key: 'name', label: 'Fine tune name', prefix: 'N' },
+        { key: 'fineTune', label: 'Fine tune', prefix: 'FT' },
+        { key: 'rule', label: 'Rule', prefix: 'R' },
+        { key: 'version', label: 'Version', prefix: 'V'},
+        { key: 'customer', label: 'Customer', prefix: 'C' },
+        
+        { key: 'technology', label: 'Technology', prefix: 'T' },
+        { key: 'analyst', label: 'Analyst', prefix: 'A' },
+        { key: 'finalisedAnalyst', label: 'Finalised analyst', prefix: 'FA' },
+        { key: 'comment', label: 'Comment', prefix: 'Cm' },
+        { key: 'tags', label: 'Tag', prefix: '#' }
+    ] as const // prevents change of key values, allowing typescript to use it
+
+    // filter key type
+    type FilterKey = (typeof filterFields)[number]["key"]
+
+
+    // Inputs 
+    let filterInputs = $state<Record<FilterKey, string>>({
+        search: '', rule: '', version: '', customer: '', technology: '', fineTune: '', 
+        name: '', analyst: '', finalisedAnalyst: '', comment: '', tags: ''
+    })
+
+    // Gets current number of filters applied
+    const filterCount = $derived(
+        filterFields.reduce((count, field) => count + (crSearchInfo[field.key]?.size ?? 0), 0)
+    )
+
+
+    let results = $derived(await getCustomerRules(crSearchInfo))
 
     onMount(() => {
-        if (results) {
+        if (results && page.url.pathname ==='/') {
             goto(`/details/${results.rows[0].id}`)
         }
     })
-
 
     $effect(() => {
         const rows = results.rows;
@@ -57,61 +100,82 @@
         }
     })
 
+    function resetPage() {
+        crSearchInfo.page = 1
+        pageInput = 1
+    }
+
+    function addFilter(key: FilterKey, input: string) {
+        const search = input.trim()
+        if (search.trim() == '') return
+        if (!crSearchInfo[key]) {
+            crSearchInfo[key] = new SvelteSet<string>()
+        }
+        crSearchInfo[key].add(search)
+        resetPage()
+    }
+
+    function removeFilter(key: FilterKey, value: string) {
+        crSearchInfo[key]?.delete(value)
+        if (!crSearchInfo[key]?.size) delete crSearchInfo[key]
+        resetPage()
+    }
+
+    function submitInput(key: FilterKey) {
+        addFilter(key, filterInputs[key])
+        filterInputs[key] = ''
+    }
+
     function clearDate() {
-        startInput = ''
-        endInput = ''
-        delete searchInfo.start
-        delete searchInfo.end
+        startDateInput =  ''
+        startDateInput = ''
+
+        if (dateIsFineTune) {
+            delete crSearchInfo.ftStart
+            delete crSearchInfo.ftEnd
+        }
+        else {
+            delete crSearchInfo.crStart
+            delete crSearchInfo.crEnd
+        }
+        
     }
 
     function applyStart() {
-        if (startInput !== "") {
-            searchInfo.start = new Date(startInput)
-            searchInfo.page = 1
-            pageInput = 1
+        if (startDateInput !== "") {
+            if (dateIsFineTune) crSearchInfo.ftStart = new Date(startDateInput)
+            else crSearchInfo.crStart = new Date(startDateInput)
+
+            resetPage()
         }
     }
 
     function applyEnd() { 
-        if (startInput != "" && startInput < endInput) {
-            searchInfo.end = new Date(endInput)
-            searchInfo.page = 1
-            pageInput = 1
+        if (startDateInput !== "" && startDateInput < endDateInput) {
+            if (dateIsFineTune) crSearchInfo.ftEnd = new Date(endDateInput)
+            else crSearchInfo.crEnd = new Date(endDateInput)
+            resetPage()
         }
         else {
             clearDate()
         }
     }
 
-    function applySearch() {
-        const search = globalSearchInput.trim()
+    function toggleDate() {
+        const oldPrefix = dateIsFineTune ? 'ft' : 'cr'
 
-        if (!search) return 
+        delete crSearchInfo[`${oldPrefix}Start`]
+        delete crSearchInfo[`${oldPrefix}End`]
 
-        if (!searchInfo.search) {
-            searchInfo.search = new SvelteSet<string>()
-        }
+        dateIsFineTune = !dateIsFineTune
 
-        if (!searchInfo.search.has(search)) {
-            searchInfo.search.add(search)
-        }
-    
-        globalSearchInput = ''
-        searchInfo.page = 1
-        pageInput = 1
-    }
+        const newPrefix = dateIsFineTune ? 'ft' : 'cr'
 
-    function removeSearch(search: string) {
-        if (!searchInfo.search) return;
+        if (startDateInput) crSearchInfo[`${newPrefix}Start`] = new Date(startDateInput)
+        if (endDateInput) crSearchInfo[`${newPrefix}End`] = new Date(endDateInput)
 
-        searchInfo.search.delete(search)
-
-        if (searchInfo.search.size === 0) {
-            delete searchInfo.search;
-        }
-
-        searchInfo.page = 1
-        pageInput = 1
+        crSearchInfo.isFineTuneSort = !crSearchInfo.isFineTuneSort
+        resetPage()
     }
 
     async function applyPage() {
@@ -124,23 +188,23 @@
                 pageInput = maxPage
             }
 
-            searchInfo.page = pageInput;
+            crSearchInfo.page = pageInput;
             }
     }
 
     async function previousPage() {
-        if (searchInfo.page > 1) {
-            searchInfo.page--;
-            pageInput = searchInfo.page;
+        if (crSearchInfo.page > 1) {
+            crSearchInfo.page--;
+            pageInput = crSearchInfo.page;
         }
     }
 
     async function nextPage() {
         if (results) {
             const maxPage = results.totalPages
-            if (searchInfo.page < maxPage) {
-                searchInfo.page++;
-                pageInput = searchInfo.page;
+            if (crSearchInfo.page < maxPage) {
+                crSearchInfo.page++;
+                pageInput = crSearchInfo.page;
             }
         }
     }
@@ -148,352 +212,280 @@
     function searchFinalisedBtn() {
         if (searchFinalised == '') {
             searchFinalised = 'true'
-            searchInfo.finalised = true
-            searchInfo.page = 1
-            pageInput = 1
+            crSearchInfo.finalised = true
 
         } else if (searchFinalised == 'true') {
             searchFinalised = 'false'
-            searchInfo.finalised = false
-            searchInfo.page = 1
-            pageInput = 1
+            crSearchInfo.finalised = false
         } else {
             searchFinalised = ''
-            delete searchInfo.finalised
-            searchInfo.page = 1
-            pageInput = 1
+            delete crSearchInfo.finalised
         }
+        resetPage()
     }
 
     function searchGlobalBtn() {
         if (searchGlobal == '') {
             searchGlobal = 'true'
-            searchInfo.global = true
-            searchInfo.page = 1
-            pageInput = 1
+            crSearchInfo.global = true
 
         } else if (searchGlobal == 'true') {
             searchGlobal = 'false'
-            searchInfo.global = false
-            searchInfo.page = 1
-            pageInput = 1
+            crSearchInfo.global = false
+        
         } else {
             searchGlobal = ''
-            delete searchInfo.global
-            searchInfo.page = 1
-            pageInput = 1
+            delete crSearchInfo.global
+
         }
+        resetPage()
     }
 
-    function applyAdvancedSearch(type: "rule" | "customer" | "technology" | "analyst" | "fine_tune" | "comment", search: string) {
-        if (search.trim() === '') {
-            delete searchInfo[type];
+    function searchExpiryBtn() {
+        if (searchExpiryDate == '') {
+            searchExpiryDate = 'true'
+            crSearchInfo.expiryDate = true
+
+        } else if (searchGlobal == 'true') {
+            searchExpiryDate = 'false'
+            crSearchInfo.expiryDate = false
+
         } else {
-            searchInfo[type] = search.trim();
+            searchExpiryDate = ''
+            delete crSearchInfo.expiryDate
         }
-    }
 
-    function ftClick(rowId: string) {
-        // if (!results && results) {
-            goto(`/details/${rowId}`)
-        // }
+        resetPage()
     }
 </script>
 
 <div class="flex w-screen h-screen overflow-hidden">
     
-    <div class="flex-4/10 w-110 min-w-90 p-6 bg-bg-dark text-text flex flex-col overflow-hidden">
-        <div class="flex flex-wrap gap-3 items-center justify-between">
-            <header class="text-3xl">
-                Fine Tunes
-            </header>
+    <div class="flex-4/10 w-110 min-w-90  px-6 pt-4 pb-2 bg-bg-dark text-text flex flex-col overflow-hidden">
+        <div class="flex gap-2 items-center justify-between">
+            <h1 class="text-xl shrink-0 lg:text-2xl xl:text-3xl transition-all duration-400 ease-in-out">
+                Customer Rules
+            </h1>
 
-            <div class='gap-4 flex flex-row'>
-                {#if $session.data?.user.teams.includes('admin') || $session.data?.user.teams.includes('senior')}
-                    <div class="gap-3">
-                        <button 
-                            class="px-4 py-2 font-semibold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-                            onclick={()=>goto(`/create`)} 
-                        >
-                            Create
-                        </button>
-                    </div>
+            <div class='flex flex-row gap-2 xl:gap-4 transition-all duration-200 ease-in-out'>
+                {#if atLeast($session.data?.user.role, 'senior')}
+                    <button 
+                        class="px-3 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                        onclick={()=>goto(`/create`)} 
+                    >
+                        <SquarePlus />
+                    </button>
                 {/if}
-                
-                <div class="gap-3 mx-auto">
-                    <button 
-                        type="button"
-                        class="px-4 py-2 font-semibold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-                        onclick={()=>downloadCSV(searchInfo)}
-                    >
-                        Export
-                    </button>
-                </div>
 
-                <div class="gap-3">
-                    <button 
-                        type="button"
-                        class="px-4 py-2 font-semibold rounded-lg bg-bg-light hover:brightness-125 transition-all duration-250 ease-out"
-                        onclick={async () => {await authClient.signOut(), goto('/login')}}
-                    >
-                        Sign Out
-                    </button>
-                </div>
+                <button 
+                    type="button"
+                    class="px-3 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                    onclick={()=>downloadCSV(crSearchInfo)}
+                >
+                    <Download />
+                </button>
+
+                <button 
+                    type="button"
+                    class="px-3 py-2 font-semibold rounded-lg bg-bg-light border border-border hover:brightness-125 transition-all duration-250 ease-out"
+                    onclick={async () => {await authClient.signOut(); goto('/login')}}
+                >
+                    <LogOut />
+                </button>
             </div>
         </div>
         
 
-        <div class="pt-3 flex flex-col gap-5">
+        <div class="pt-3 flex flex-col gap-y-4">
 
-            <div class='flex gap-4'>
-                <div class='flex grow flex-wrap gap-x-4 gap-y-2'>
-                    <div class="flex flex-col grow gap-1">
-                        <label for='dateFrom' class="text-text-muted text-xs font-medium">From:</label>
-                        <input type="date" bind:value={startInput} onblur={applyStart} class="full-w min-w-0 px-3 py-2 text-text bg-bg-light border border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
-                    </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-2 ">
 
-                    <div class="flex flex-col grow gap-1">
-                        <label for='dateTo' class="text-text-muted text-xs font-medium">To:</label>
-                        <input type="date" bind:value={endInput} onblur={applyEnd} class="full-w min-w-0 px-3 py-2 text-text bg-bg-light border border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
-                    </div>
+                <div class="flex min-w-0 grow  flex-col gap-1">
+                    <label for="dateFrom" class="text-text-muted text-xs font-medium">From:</label>
+                    <input id="dateFrom" type="date" bind:value={startDateInput} onblur={applyStart}
+                        class="h-11 w-full min-w-0 px-3 text-text bg-bg-light border border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
                 </div>
 
-                <div class='flex flex-wrap gap-x-4 gap-y-2 justify-end items-end'>
+                <div class="flex min-w-0 grow items-end gap-4">
+                    <div class="flex min-w-0 grow flex-col gap-1">
+                        <label for="dateTo" class="text-text-muted text-xs font-medium">To:</label>
+                        <input id="dateTo" type="date" bind:value={endDateInput} onblur={applyEnd}
+                            class="h-11 w-full min-w-0 px-3 text-text bg-bg-light border border-border rounded-lg hover:border-action/60 focus:border-action transition-all duration-250 ease-out">
+                    </div>
+
                     <button
                         type="button"
-                        onclick={() => searchInfo.descending = !searchInfo.descending}
-                        class="flex w-12 h-11 bg-bg-light justify-center items-center text-text border border-border rounded-lg hover:border-action transition-all duration-250 ease-out"
+                        onclick={() => crSearchInfo.descending = !crSearchInfo.descending}
+                        class="flex w-12 h-11 shrink-0 bg-bg-light justify-center items-center text-text border border-border rounded-lg hover:border-action transition-all duration-250 ease-out"
                     >
-                        {searchInfo.descending ? "▼" : "▲"}
+                        <!-- {crSearchInfo.descending ? "▼" : "▲"} -->
+                        {#if crSearchInfo.descending}
+                            <CalendarArrowDown />
+                        {:else}
+                             <CalendarArrowUp />
+                        
+                        {/if}
                     </button>
 
                     <button
                         type="button"
                         onclick={() => clearDate()}
-                        class="flex w-12 h-11 bg-bg-light justify-center items-center text-text border border-border rounded-lg hover:border-action transition-all duration-250 ease-out"
+                        class="flex w-12 h-11 shrink-0 bg-bg-light justify-center items-center text-text border border-border rounded-lg hover:border-action transition-all duration-250 ease-out"
                     >
-                        clear
+                        <X />
                     </button>
                 </div>
             </div>
 
 
-            
+
+            <div class="flex gap-x-4 gap-y-2 items-center">
+                <input 
+                    class="w-full py-2 px-4 bg-bg-light rounded-lg border border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
+                    type="text" 
+                    placeholder="Search" 
+                    bind:value={filterInputs.search}
+                    onkeydown={(e) => {
+                        if (e.key === "Enter") submitInput('search');
+                    }}
+                >
+
+                <button
+                    onclick={()=>{expandedSearch = !expandedSearch}}
+                    class="rounded-lg w-12 h-11 bg-bg-light shrink-0 shadow-sm flex items-center justify-center before:text-white before:text-xs before:font-medium border border-border outline-none hover:border-action transition-all duration-250 ease-out"
+
+                >
+                    <ListFilter class="transition-transform duration-300 {expandedSearch ? 'rotate-180' : ''}" />
+                </button>
+            </div>
 
             
-
-            <div>
-                <div class="flex gap-x-4 gap-y-2 items-center">
-                    <input 
-                        class="w-full py-2 px-4 bg-bg-light rounded-lg border border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
-                        type="text" 
-                        placeholder="Search" 
-                        bind:value={globalSearchInput}
-                        onkeydown={(e) => {
-                            if (e.key === "Enter") applySearch();
-                        }}
-                    >
-                    
-                    <button
-                        onclick={()=>searchGlobalBtn()}
-                        class="rounded-lg w-12 h-11 shrink-0 items-center justify-center shadow-sm flex before:text-white before:text-xs before:font-medium border border-border outline-none hover:border-action transition-all duration-250 ease-out
-                                {searchGlobal == "true" ? "bg-green-500/90" : searchGlobal == "false" ? "bg-red-500/90" : "bg-bg-light"}
-                                "
-                    >
-                        🌐
-                    </button>
-
-                    <button
-                        onclick={()=>searchFinalisedBtn()}
-                        class="rounded-lg shadow-sm flex w-12 h-11 shrink-0 items-center justify-center before:text-white before:text-xs before:font-medium border border-border outline-none hover:border-action transition-all duration-250 ease-out
-                                {searchFinalised == "true" ? "bg-green-500/90" : searchFinalised == "false" ? "bg-red-500/90" : "bg-bg-light"}
-                                "
-                    >
-                        {searchFinalised == "true" ? "✗" : searchFinalised == "false" ? "✓" : "—"}
-                    </button>
-
-                    <button
-                        onclick={()=>{expandedSearch = !expandedSearch}}
-                        class="rounded-lg w-12 h-11 shrink-0 bg-bg-light shadow-sm flex items-center justify-center before:text-white before:text-xs before:font-medium border border-border outline-none hover:border-action transition-all duration-250 ease-out}"
-                    >
-                        {expandedSearch ?  "▲" : "▼"}
-                    </button>
-                </div>
-
-                {#if (searchInfo.search?.size ?? 0) > 0} 
-                    <div class="max-h-24 flex flex-wrap overflow-y-auto items-center gap-2 mt-4 pr-1">
-                        {#each searchInfo.search as search}
-                            <button
-                                type="button"
-                                onclick={()=>removeSearch(search)}
-                                // class="px-3 py-1.5 bg-bg-light rounded-lg border-2 border-border outline-none hover:border-action transition-all duration-250 ease-out"
-                                class="items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-action/10 text-indigo-300 border border-action/30 outline-none hover:border-action transition-all duration-250 ease-out"
-                            >
-                                {search} x
-                            </button>
-                        {/each}
-                    </div>
-                {/if}
+            <!-- expandedSearch -->
 
                 {#if expandedSearch}
-                    <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-3">
-                        <div class="flex flex-col gap-1">
-                            <label for="rule" class="text-xs font-medium text-text-muted">Rule:</label>
-                            <input 
-                                type="text" 
-                                placeholder="Search rule..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={ruleInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("rule", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
-                        </div>
+                    <div transition:slide={{ duration: 300 }} class="overflow-hidden">
 
-                        <div class="flex flex-col gap-1">
-                            <label for="customer" class="text-xs font-medium text-text-muted">Customer:</label>
-                            <input 
-                                type="text" 
-                                placeholder="Search customer..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={customerInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("customer", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
-                        </div>
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-3 @sm:grid-cols-4">
+                            <FilterToggle label="Date" type="mode" icon={CalendarDays}
+                                value={dateIsFineTune ? 'Fine tune' : 'Rule'}
+                                title="Which date the From/To range applies to"
+                                onclick={toggleDate} />
 
-                        <div class="flex flex-col gap-1">
-                            <label for="technology" class="text-xs font-medium text-text-muted">Technology:</label>
-                            <input 
-                                type="text" 
-                                placeholder="Search technology..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={technologyInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("technology", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
-                        </div>
+                            <FilterToggle label="Expiry" icon={CalendarClock}
+                                value={searchExpiryDate == 'true' ? 'Yes' : 'Any'}
+                                type={searchExpiryDate == 'true' ? 'on' : 'off'}
+                                title="First fine tune has an expiry date"
+                                onclick={searchExpiryBtn} />
 
-                        <div class="flex flex-col gap-1">
-                            <label for="analyst" class="text-xs font-medium text-text-muted">Analyst:</label>
-                            <!-- bind target value for persistence -->
-                            <input 
-                                type="text" 
-                                placeholder="Search analyst..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={analystInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("analyst", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
-                        </div>
+                            <FilterToggle label="Global" icon={Globe}
+                                value={searchGlobal == 'true' ? 'Yes' : searchGlobal == 'false' ? 'No' : 'Any'}
+                                type={searchGlobal == 'true' ? 'yes' : searchGlobal == 'false' ? 'no' : 'off'}
+                                title="Rule has a global fine tune"
+                                onclick={searchGlobalBtn} />
 
-                        <div class="flex flex-col gap-1">
-                            <label for="ft" class="text-xs font-medium text-text-muted">Fine tune:</label>
-                            <input 
-                                type="text" 
-                                placeholder="Search fine tune..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={fineTuneInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("fine_tune", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
-                        </div>
 
-                        <div class="flex flex-col gap-1">
-                            <label for="comment" class="text-xs font-medium text-text-muted">Comment:</label>
-                            <input 
-                                type="text" 
-                                placeholder="Search rule..." 
-                                class="px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
-                                bind:value={commentInput}
-                                oninput={(e) => {
-                                    const target = e.currentTarget;
-                                    clearTimeout(Number(target.dataset.timerId));
-                                    target.dataset.timerId = String(setTimeout(() => {
-                                    applyAdvancedSearch("comment", target.value);
-                                    }, 500)); 
-                                }} 
-                            >
+                            <FilterToggle label="Status" icon={searchFinalised == 'false' ? CircleX : CircleCheck}
+                                value={searchFinalised == 'true' ? 'Finalised' : searchFinalised == 'false' ? 'Pending' : 'Any'}
+                                type={searchFinalised == 'true' ? 'yes' : searchFinalised == 'false' ? 'pending' : 'off'}
+                                title="Fine tune finalised or pending"
+                                onclick={searchFinalisedBtn} />
                         </div>
+                        
+
+                        <div class="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-3">
+                            {#each filterFields as field (field.key) }
+                                {#if field.key !== 'search'}
+                                    <input
+                                        type="text"
+                                        placeholder={field.label}
+                                        aria-label={field.label}
+                                        title="{field.label} (press Enter to add)"
+                                        bind:value={filterInputs[field.key]}
+                                        onkeydown={(e) => { if (e.key === "Enter") submitInput(field.key)}}
+                                        class="min-w-0 px-3 py-1.5 bg-bg-light border border-border rounded-md text-sm text-text focus:outline-none focus:border-action hover:border-action/60 transition-all duration-250 ease-out"
+                                    >
+                                {/if}
+                            {/each}
+                        </div>
+                        
+                        
                     </div>
                 {/if}
 
-            </div>
+                {#if filterCount > 0}
+                    <div class="mt-0 flex max-h-24 flex-wrap items-center gap-2 overflow-y-auto pr-1">
+                        {#each filterFields as field (field.key)}
+                            {#each crSearchInfo[field.key] ?? [] as filter (filter)}
+                                <button
+                                    type="button"
+                                    title="Remove {field.label}: {filter}"
+                                    onclick={() => removeFilter(field.key, filter)}
+                                    class="flex items-stretch overflow-hidden rounded-full border border-action/30 bg-action/10 text-xs outline-none hover:border-action transition-all duration-250 ease-out"
+                                >
+                                    <span class="bg-action/20 px-2 py-1 font-semibold text-indigo-200">{field.prefix}</span>
+                                    <span class="px-2 py-1 text-indigo-300">{filter} ×</span>
+                                </button>
+                            {/each}
+                        {/each}
+                    </div>
+                {/if}
         </div>
 
-        <div class="py-5">
-            <div class=" border-4 border-bg-light rounded-lg"></div>
+        <div class="py-4">
+            <div class=" border border-border rounded-lg"></div>
         </div>
             
 
-        <div class="flex-1 overflow-y-auto flex flex-col gap-3">
-            {#if results}
-                {#each results.rows as row}
-                    <button
-                        class="px-5 py-3 bg-bg-light rounded-lg text-wrap text-left transition-all duration-250 ease-out border-l-0 border-l-bg-light hover:brightness-125
-                            {selectedId === row.id ? "border-l-5 border-l-indigo-500" : " "}"
+        
 
-                        onclick={() => ftClick(row.id)}
+        <div class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
+            {#if results}
+                {#each results.rows as row (row.id)}
+                    <button
+                        type="button"
+                        aria-current={selectedId === row.id ? 'true' : undefined}
+                        onclick={() => goto(`/details/${row.id}`)}
+                        class="relative w-full shrink-0 overflow-hidden rounded-lg border py-2.5 pr-4 pl-5 text-left transition-colors duration-250 ease-out focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action/60
+                            {selectedId === row.id
+                                ? 'border-action/60 bg-action/10'
+                                : 'border-border bg-bg-light hover:border-action/40'}"
                     >
-                        <div class="flex flex-col gap-1 items-start">
-                            <div class="flex w-full justify-between items-center">
-                                <span class="text-xl">{row.date.toLocaleDateString()}</span>
-                                <input type="checkbox" checked={row.finalised} disabled class="appearance-none h-5 w-5 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']">
-                            </div>
-                            <div class="text flex flex-wrap items-center gap-x-5">
-                                <span class="text-lg">{row.customer}</span> 
-                                <span class="text-sm">{row.rule}</span>  
-                            </div>  
+                        <span
+                            class="absolute inset-y-0 left-0 w-1 {row.finalised ? 'bg-green-500' : 'bg-amber-500'}"
+                            aria-hidden="true"
+                        ></span>
+                        <span class="sr-only">{row.finalised ? 'Finalised' : 'Pending'}</span>
+
+                        <div class="flex items-baseline justify-between gap-3">
+                            <span class="min-w-0 truncate text-base font-medium text-text" title={row.customer}>
+                                {row.customer}
+                            </span>
+                            <span class="shrink-0 text-xs text-text-muted">{row.date.toLocaleDateString()}</span>
                         </div>
+
+                        <p class="mt-0.5 line-clamp-2 text-sm text-text-muted" title={row.rule}>
+                            {row.rule}
+                        </p>
                     </button>
                 {/each}
+
+                {#if results.rows.length === 0}
+                    <p class="px-2 py-6 text-center text-sm text-text-muted">
+                        No fine tunes match these filters. Remove a search or clear the dates to widen the search.
+                    </p>
+                {/if}
             {/if}
-
-            <!-- {#if results.loading}
-                <div class="absolute inset-0 pointer-events-none">
-                    <div class="flex flex-col gap-3">
-                        {#each Array(10) as _}
-                            <div class="h-[76px] rounded-lg bg-bg-light animate-pulse"></div>
-                        {/each}
-                    </div>
-                </div>
-            {/if} -->
-
         </div>
 
-        <div class="pt-5 flex items-center justify-center">
+        <div class="pt-2 flex items-center justify-center">
             <div class="flex items-center justify-center">
                 <button
                     class="px-1"
                      type="button"
                      onclick={previousPage}
-                     disabled={searchInfo.page < 2}
+                     disabled={crSearchInfo.page < 2}
                   >
-                     «
+                     <ChevronsLeft />
                 </button>
 
                 <div>
@@ -525,21 +517,22 @@
                     class="px-1"
                      type="button"
                      onclick={nextPage}
-                     disabled={results ? searchInfo.page >= results.totalPages : true}
+                     disabled={results ? crSearchInfo.page >= results.totalPages : true}
                   >
-                     »
+                    <ChevronsRight />
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="flex-7/10 p-6 bg-bg border-l border-border text-text overflow-y-auto">
-    <!-- FIX LOADING FROM FLASHING -->
-        <!-- {#if results.loading} 
-            <p>hiu</p>
-        {:else if results.current} -->
+    <div class="flex-7/10 px-6 pb-6 bg-bg border-l border-border text-text overflow-y-auto">
+
+        <main class="">
             {@render children()}
-        <!-- {/if} -->
+        </main>
+            
+
+            
     </div>
 </div>
 

@@ -1,0 +1,580 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "id": "24784750-6f20-40e0-ba77-6327402e70a8",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "analysts",
+      "entityType": "tables"
+    },
+    {
+      "name": "customer_rules",
+      "entityType": "tables"
+    },
+    {
+      "name": "customers",
+      "entityType": "tables"
+    },
+    {
+      "name": "fine_tune_tags",
+      "entityType": "tables"
+    },
+    {
+      "name": "fine_tunes",
+      "entityType": "tables"
+    },
+    {
+      "name": "rules",
+      "entityType": "tables"
+    },
+    {
+      "name": "tags",
+      "entityType": "tables"
+    },
+    {
+      "name": "technologies",
+      "entityType": "tables"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "analysts"
+    },
+    {
+      "type": "varchar(254)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "email",
+      "entityType": "columns",
+      "table": "analysts"
+    },
+    {
+      "type": "varchar(255)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "analysts"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "customer_rules"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "customer_rules"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "ruleId",
+      "entityType": "columns",
+      "table": "customer_rules"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "customerId",
+      "entityType": "columns",
+      "table": "customer_rules"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "customers"
+    },
+    {
+      "type": "varchar(255)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "customers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "technologyId",
+      "entityType": "columns",
+      "table": "customers"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fineTuneId",
+      "entityType": "columns",
+      "table": "fine_tune_tags"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "tagId",
+      "entityType": "columns",
+      "table": "fine_tune_tags"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "previous_fine_tune_id",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "version",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "date",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "expiryDate",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "customerRuleId",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "varchar(36)",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "globalId",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "varchar(72)",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "fineTune",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "comment",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "analystId",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "finalised",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "finalisedAnalystId",
+      "entityType": "columns",
+      "table": "fine_tunes"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "rules"
+    },
+    {
+      "type": "varchar(255)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "rules"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "tags"
+    },
+    {
+      "type": "varchar(72)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "tags"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "technologies"
+    },
+    {
+      "type": "varchar(255)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "name",
+      "entityType": "columns",
+      "table": "technologies"
+    },
+    {
+      "columns": [
+        "ruleId"
+      ],
+      "tableTo": "rules",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_customer_rules_ruleId_rules_id_fk",
+      "entityType": "fks",
+      "table": "customer_rules"
+    },
+    {
+      "columns": [
+        "customerId"
+      ],
+      "tableTo": "customers",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_customer_rules_customerId_customers_id_fk",
+      "entityType": "fks",
+      "table": "customer_rules"
+    },
+    {
+      "columns": [
+        "technologyId"
+      ],
+      "tableTo": "technologies",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_customers_technologyId_technologies_id_fk",
+      "entityType": "fks",
+      "table": "customers"
+    },
+    {
+      "columns": [
+        "fineTuneId"
+      ],
+      "tableTo": "fine_tunes",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tune_tags_fineTuneId_fine_tunes_id_fk",
+      "entityType": "fks",
+      "table": "fine_tune_tags"
+    },
+    {
+      "columns": [
+        "tagId"
+      ],
+      "tableTo": "tags",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tune_tags_tagId_tags_id_fk",
+      "entityType": "fks",
+      "table": "fine_tune_tags"
+    },
+    {
+      "columns": [
+        "previous_fine_tune_id"
+      ],
+      "tableTo": "fine_tunes",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tunes_previous_fine_tune_id_fine_tunes_id_fk",
+      "entityType": "fks",
+      "table": "fine_tunes"
+    },
+    {
+      "columns": [
+        "customerRuleId"
+      ],
+      "tableTo": "customer_rules",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tunes_customerRuleId_customer_rules_id_fk",
+      "entityType": "fks",
+      "table": "fine_tunes"
+    },
+    {
+      "columns": [
+        "analystId"
+      ],
+      "tableTo": "analysts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tunes_analystId_analysts_id_fk",
+      "entityType": "fks",
+      "table": "fine_tunes"
+    },
+    {
+      "columns": [
+        "finalisedAnalystId"
+      ],
+      "tableTo": "analysts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_fine_tunes_finalisedAnalystId_analysts_id_fk",
+      "entityType": "fks",
+      "table": "fine_tunes"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "analysts_pk",
+      "table": "analysts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "customer_rules_pk",
+      "table": "customer_rules",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "customers_pk",
+      "table": "customers",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "fine_tunes_pk",
+      "table": "fine_tunes",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "rules_pk",
+      "table": "rules",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "tags_pk",
+      "table": "tags",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "technologies_pk",
+      "table": "technologies",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "ruleId",
+        "customerId"
+      ],
+      "nameExplicit": true,
+      "name": "unique_rule_customer",
+      "entityType": "uniques",
+      "table": "customer_rules"
+    },
+    {
+      "columns": [
+        "customerRuleId",
+        "version"
+      ],
+      "nameExplicit": true,
+      "name": "unique_customer_rule_version",
+      "entityType": "uniques",
+      "table": "fine_tunes"
+    },
+    {
+      "columns": [
+        "name"
+      ],
+      "nameExplicit": false,
+      "name": "tags_name_unique",
+      "entityType": "uniques",
+      "table": "tags"
+    }
+  ],
+  "renames": []
+}

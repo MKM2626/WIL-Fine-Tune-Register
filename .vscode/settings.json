@@ -1,5 +1,15 @@
 {
 	"files.associations": {
 		"*.css": "tailwindcss"
-	}
+	},
+	"cSpell.words": [
+		"arktype",
+		"ingverb",
+		"Inital",
+		"libsql",
+		"ondelete",
+		"onedit",
+		"unfinalised",
+		"unixepoch"
+	]
 }
