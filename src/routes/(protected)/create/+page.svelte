@@ -1,31 +1,31 @@
 <script lang="ts">
-    import { getAnalysts, getCustomers, getRules, getTechnology } from "#lib/remote/getSimple.remote";
+    import { getCustomers, getRules, getTechnology, getTags } from "#lib/remote/getSimple.remote";
     import { getCustomerRules } from "#lib/remote/getCustomerRules.remote";
     import { getCRSearchContext } from "#lib/context/customerRuleSearch";
     import { toast } from '#lib/components/toast.svelte.js'
-    import ComboBox from '#lib/components/comboBox.svelte'
-    import { authClient } from '#lib/auth-client'
     import { tabIndentation } from '#lib/utils/keyDownTextArea'
-	import { onMount } from "svelte";
-
-    const session = authClient.useSession() 
+    import { createForm } from '#lib/remote/createForm.remote'
+	import { handleError } from "#lib/errors/handleError";
+    import { Globe, CircleCheck, CircleX } from '@lucide/svelte/icons'
+    import TagInput from "#lib/components/TagInput.svelte"
+    import ComboBox from '#lib/components/comboBox.svelte'
 
     const crSearchInfo = getCRSearchContext()
 
-	let analysts = await getAnalysts();
 	let rules = await getRules();
 	let customers = await getCustomers();
 	let technologies = await getTechnology();
+    let tags = await getTags()
 
-    const initialCustomer = customers[0]
+    let global = $state(false)
 
-    if (initialCustomer) {
-         createForm.fields.customerID.set(initialCustomer.id);
-    }
+    let finalised = $state(false)
+
+
     
 	const selectedCustomer = $derived(
 		customers.find(
-			(customer) => customer.id == createForm.fields.customerID.value()
+			(customer) => customer.id == createForm.fields.customerId.value()
 		)
 	);
 
@@ -34,36 +34,29 @@
 			(technology) => technology.id == selectedCustomer?.technologyId
 		)?.name
 	);
-
-    onMount(() => {
-        createForm.fields.ruleID.set('')
-        createForm.fields.customerID.set('')
-        createForm.fields.after.set('');
-        
-        createForm.fields.global.set(false)
-        
-		createForm.fields.comment.set('');
-		createForm.fields.analystID.set('');
-		createForm.fields.finalised.set(false);
-    })
 </script>
 
-<form class="max-w-5xl" {...createForm.enhance(async (form) => {
+<form class="@container mx-auto max-w-5xl" {...createForm.enhance(async (form) => {
+
+
     try {
         const result = await form.submit().updates(
-            search(searchInfo).withOverride((results) => ({...results}))
+            getCustomerRules(crSearchInfo).withOverride((results) => ({...results}))
         )
-
-        toast.success('Saved')
-
+        if (result) {
+            toast.success('Saved') 
+            form.element.reset()
+        }
+        else toast.error('Invalid input')
+       
     } catch(error) {
-
+        handleError(error)
     }
+
 })}>
 
-    <div class="flex items-center justify-between pb-5">
+    <div class="flex items-center justify-between pb-5 pt-4">
 
-        <input type='datetime-local'>
         <header class="text-3xl">
             Create Fine Tune
         </header>
@@ -86,147 +79,161 @@
         </div>
     </div>
 
-    <div class="bg-bg-light shadow-md rounded-lg p-5 flex flex-col gap-3">
-        <div class="flex">
-            <span class="w-32 text-text-muted">
-                Rule:
-            </span>
+    <div class='flex flex-col gap-4 pb-6'>
+        <section class='rounded-xl border border-border bg-bg-light shadow-md'>
+            <div class="grid grid-cols-1 gap-x-6 gap-y-4 px-5 py-4 @2xl:grid-cols-2">
+                <div>
+                    <p class="mb-1 text-xs font-medium text-text-muted">Rule</p>
 
-            <!-- <select
-                class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border hover:border-action/60 focus:border-action transition-all duration-250 ease-out outline-none"
-                {...createForm.fields.ruleID.as("select")}
-            >
-                {#each rules as rule}
-                    <option value={rule.id}>
-                        {rule.name}
-                    </option>
-                {/each}
-            </select> -->
-
-            <div class='flex-1'>
-                <ComboBox 
-                    options={rules}
-                    placeholder="Select rule..."
-                    onSelect={(rule) => {createForm.fields.ruleID.set(rule.id)}}
-                />
+                    <!-- TODO: put in selected -->
+                    <ComboBox 
+                        options={rules}
+                        selected={createForm.fields.ruleId.value()}
+                        placeholder="Select rule..."
+                        onSelect={(rule) => createForm.fields.ruleId.set(rule.id)}
+                        onClear={() => createForm.fields.ruleId.set('')}
+                    />
+                    <input {...createForm.fields.ruleId.as('text')} type="hidden"/>
+                    {#each createForm.fields.ruleId.issues() as issue (issue)}
+                        <p class="pl-1 mt-1 text-xs text-red-500">{issue.message}</p>
+                    {/each}
+                </div>
+                
+                <div>
+                    <p class="mb-1 text-xs font-medium text-text-muted">Customer</p>
+                    <ComboBox
+                        options={customers}
+                        selected={createForm.fields.customerId.value()}
+                        placeholder="Select customer..."
+                        onSelect={(customer) => createForm.fields.customerId.set(customer.id)}
+                        onClear={() => createForm.fields.customerId.set('')}
+                    />
+                    <input {...createForm.fields.customerId.as('text')} type='hidden'/>
+                    {#each createForm.fields.customerId.issues() as issue (issue)}
+                        <p class="pl-1 mt-1 text-xs text-red-500">{issue.message}</p>
+                    {/each}
+                </div>
             </div>
-            
 
-            <input type="hidden" {...createForm.fields.ruleID.as("text")}/>
-
-        </div>
-
-        <div class="flex">
-            <span class="w-32 text-text-muted">
-                Customer:
-            </span>
-
-            <!-- <select
-                class="flex-1 px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
-                {...createForm.fields.customerID.as("select")}
-            >
-                {#each customers as customer}
-                    <option value={customer.id}>
-                        {customer.name}
-                    </option>
-                {/each}
-            </select> -->
-
-            <div class='flex-1'>
-                <ComboBox 
-                    options={customers}
-                    placeholder="Select customer..."
-                    onSelect={(customer) => {createForm.fields.customerID.set(customer.id)}}
-                />
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border px-5 py-3 text-sm">
+                <span class="text-xs font-medium text-text-muted">Technology</span>
+                <span class={technologyName ? 'text-text' : 'text-text-muted'}>
+                    {technologyName ?? 'Select a customer to see its technology'}
+                </span>
             </div>
-            
+        </section>
 
-            <input type="hidden" {...createForm.fields.customerID.as("text")}/>
-        </div>
-
-        <div class="flex">
-            <span class="w-32 text-text-muted">
-                Technology:
-            </span>
-
-            <span>
-                {technologyName ?? "No customer selected"}
-            </span>
-        </div>
-    </div>
-
-
-    {#if $session.data?.user.teams.includes('admin') || $session.data?.user.teams.includes('senior') || !$session.data?.user.teams.includes('junior')}
-        <div class="mt-5">
-            <h3 class="text-xl mb-2">
-                Global
-            </h3>
-
-            <div class="bg-bg-light shadow-md rounded-lg p-4 flex items-center gap-3">
-                <input {...createForm.fields.global.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
-                <label for="global" >
-                    Will apply to all customers using this technology
+        <section class="rounded-xl border border-border bg-bg-light shadow-md">
+            <div class="px-5 py-4">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-medium text-text-muted">Fine tune name (optional)</span>
+                    <input
+                        type = 'text'
+                        {...createForm.fields.name.as('text')}
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text transition-all duration-250 ease-out hover:border-action/60 focus:border-action focus:outline-none"
+                    />
                 </label>
             </div>
-        </div>
-    {/if}
 
-    {#if !$session.data?.user.teams.includes('junior') || $session.data?.user.teams.includes('senior') || $session.data?.user.teams.includes('admin')}
-        <div class="mt-5">
-            <h3 class="text-xl mb-2">
-                Finalised
-            </h3>
-
-            <div class="bg-bg-light shadow-md rounded-lg p-4 flex items-center gap-3">
-                <input {...createForm.fields.finalised.as("checkbox")} class="appearance-none h-4 w-4 rounded-xs shadow-sm border border-red-500 bg-red-500 flex items-center justify-center cursor-pointer before:content-['✗'] before:text-white before:text-xs before:font-medium checked:bg-green-500 checked:border-green-500 checked:before:content-['✓']"/>
-                <label for="global" >
-                    Will only finalise the chosen customer, even if set to global.
+            <div class="border-t border-border px-5 py-4">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-medium text-text-muted">Fine tune entry</span>
+                    <textarea
+                        rows="6"
+                        title="Fine tune"
+                        use:tabIndentation
+                        {...createForm.fields.fineTune.as('text')}
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text transition-all duration-250 ease-out hover:border-action/60 focus:border-action focus:outline-none min-h-32 resize-y leading-6"
+                    ></textarea>
+                    {#each createForm.fields.fineTune.issues() as issue (issue)}
+                        <p class="pl-1 mt-1 text-xs text-red-500">{issue.message.replace('fineTune', '')}</p>
+                    {/each}
                 </label>
             </div>
-        </div>
-    {/if}
+        </section>
 
-    <div class="mt-5">
-        <h3 class="text-xl mb-2">
-            Fine Tune Entry:
-        </h3>
+        <section class="rounded-xl border border-border bg-bg-light shadow-md">
+            <div class="px-5 py-4">
+                <label class='block'>
+                    <span class="mb-1 block text-xs font-medium text-text-muted">Expiry date (optional)</span>
+                    <input 
+                        {...createForm.fields.expiryDate.as('date')}
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text transition-all duration-250 ease-out hover:border-action/60 focus:border-action focus:outline-none"
+                    />
+                </label>
+            </div>
 
-        <div class="bg-bg-light shadow-md rounded-lg p-4">
-            <textarea
-                rows="4"
-                use:tabIndentation
-                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
-                {...createForm.fields.after.as("text")}
-            ></textarea>
-        </div>
-    </div>
+            <div class="border-t border-border px-5 py-4">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-medium text-text-muted">Comment (optional)</span>
+                    <textarea
+                        rows="3"
+                        use:tabIndentation
+                        {...createForm.fields.comment.as('text')}
+                        class="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text transition-all duration-250 ease-out hover:border-action/60 focus:border-action focus:outline-none resize-y leading-6"
+                    ></textarea>
+                </label>
+            </div>
 
-    <div class="mt-5">
-        <h3 class="text-xl mb-2">
-            Analyst:
-        </h3>
+            <div class="border-t border-border px-5 py-4">
+                <span class="mb-1 block text-xs font-medium text-text-muted">Tags (optional)</span>
+                <!-- modify tag input to save tags from id -->
+                <TagInput
+                    options={tags}
 
-        <div class="bg-bg-light shadow-md rounded-lg p-4">
-            <ComboBox
-                options={analysts}
-                placeholder="Select analyst..."
-                onSelect={(analyst) => {createForm.fields.analystID.set(analyst.id)}}
-            />
-        </div>
-        
-    </div> 
+                    onChange={(existing, created) => {
+                        
+                        createForm.fields.existingTags.set(existing)
+                        createForm.fields.newTags.set(created)
+                    }}
+                />
+            </div>
+        </section>
 
-    <div class="mt-5">
-        <h3 class="text-xl mb-2">
-            Comment:
-        </h3>
-        <div class="bg-bg-light shadow-md rounded-lg p-4">
-            <textarea
-                use:tabIndentation
-                rows="4"
-                class="w-full px-3 py-2 rounded-lg bg-bg border-2 border-border outline-none hover:border-action/60 focus:border-action transition-all duration-250 ease-out"
-                {...createForm.fields.comment.as("text")}
-            ></textarea>
-        </div>
+        <section class="rounded-xl border border-border bg-bg-light shadow-md">
+            <div class="grid grid-cols-1 gap-x-6 gap-y-4 px-5 py-4 @md:grid-cols-2">
+
+                <button
+                    type="button"
+                    onclick={() => {global = !global}}
+                    class="flex w-full flex-col items-start rounded-lg border px-3 py-1 text-left transition-all duration-250 ease-out {global ? "border-green-500/50 bg-green-500/10" :  "border-border bg-bg hover:border-action"}"
+                >   
+                    <span class=" items-center font-medium tracking-wide text-text inline-flex gap-x-2">
+                        <Globe size={16} class="shrink-0 {global ? "text-green-400" : "text-text-muted"}" />
+                        Global
+                    </span>
+                    <span class="pl-5.5 max-w-full text-sm font-medium text-text-muted">
+                        Applies to all customers using this technology
+                    </span>
+                </button>
+
+                <input {...createForm.fields.global.as('hidden', global)}>
+
+
+                <button 
+                    type="button"
+                    onclick={() => {finalised = !finalised}}
+                    class="flex w-full flex-col items-start rounded-lg border px-3 py-1 text-left transition-all duration-250 ease-out {finalised ? "border-green-500/50 bg-green-500/10" :  "border-border bg-bg hover:border-action"}"
+                >
+                    <span class=" items-center font-medium tracking-wide text-text inline-flex gap-x-2">
+                        {#if finalised}
+                            <CircleCheck size={16} class="shrink-0 text-green-400" />
+                        {:else }
+                            <CircleX size={16} class="shrink-0 text-text-muted" />
+                        {/if}
+                        Status
+                        
+                    </span>
+                    <span class="pl-5.5 max-w-full text-xs font-medium  text-text-muted">
+                         Finalise only chosen customer, even if set to global
+                    </span>
+                </button>
+
+                <input {...createForm.fields.finalised.as('hidden', finalised)}>
+
+
+            </div>
+        </section>
+
     </div>
 </form>
