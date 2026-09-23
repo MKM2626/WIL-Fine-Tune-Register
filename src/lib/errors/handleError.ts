@@ -1,15 +1,30 @@
 import { toast } from '../components/toast.svelte.ts'
-import { AppError } from './appError';
+import { isHttpError } from '@sveltejs/kit';
+
+
 
 // Unsure of what type it should be
 export function handleError( error: unknown ): void {
 
-    console.error(error);
+    console.log(error)
 
-    if (error instanceof AppError) {
-        toast.error(error.message);
-        return;
+    if (isHttpError(error) && error.status < 500) {
+        toast.error(error.body.message)
+        return
     }
 
-    throw error;
+
+    throw error
 }
+
+
+    // if (error instanceof AppError) {
+    //     console.log('before')
+    //     toast.error(error.message)
+    //     console.log('after')
+    //     return
+    // }
+
+    // console.log('no is instance')
+    // throw error
+
