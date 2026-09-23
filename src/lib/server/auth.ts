@@ -28,10 +28,6 @@ async function getGithubRole(login: string, headers: RequestInit): Promise<Role 
 }
 
 export const auth = betterAuth({
-
-    advanced: {
-        trustedProxyHeaders: true
-    },
     
     user: {
         additionalFields: {
