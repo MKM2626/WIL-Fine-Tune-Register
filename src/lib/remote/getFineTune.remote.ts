@@ -12,7 +12,7 @@ const ftSchema = type("string.numeric.parse")
 export const getFineTune = query(ftSchema, async (ftId) => {
     const creatorAnalyst = alias(analysts, "creator_analyst")
     const finaliseAnalyst = alias(analysts, 'finalise_analyst')
-    const previousFineTune = alias(fine_tunes, 'previous_fine_tune');
+    const previousFineTune = alias(fine_tunes, 'previous_fine_tune')
 
     const result = await db.select({
         date: fine_tunes.date,
@@ -27,6 +27,8 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         before: sql<string>`COALESCE(${previousFineTune.fineTune}, 'Initial Rule')`,
         after: fine_tunes.fineTune,
 
+        expiryDate: fine_tunes.expiryDate,
+
         globalId: fine_tunes.globalId,
         finalised: fine_tunes.finalised,
 
@@ -35,7 +37,20 @@ export const getFineTune = query(ftSchema, async (ftId) => {
 
         finalisedAnalystId: finaliseAnalyst.id,
         finalisedAnalystName: finaliseAnalyst.name,
-        comment: fine_tunes.comment
+        comment: fine_tunes.comment,
+
+        tags: sql`
+            (
+                SELECT json_group_array(
+                    json_object(
+                        'id', tags.id,
+                        'name', tags.name 
+                    )
+                )
+                FROM tags 
+                JOIN fine_tune_tags ON fine_tune_tags.tagId = tags.id
+                WHERE fine_tune_tags.fineTuneId = ${ftId}
+            )`.mapWith((value) => JSON.parse(value as string) as { id: number; name: string }[]),
     })
     .from(fine_tunes)
     .leftJoin(customer_rules, eq(fine_tunes.customerRuleId, customer_rules.id))
@@ -46,7 +61,9 @@ export const getFineTune = query(ftSchema, async (ftId) => {
     .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
     .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
     .where(eq(fine_tunes.id, ftId))
+    .groupBy(fine_tunes.id) // unsure if needed
     .get()
+
 
     if (!result) error(404, 'Fine tune does not exist.')
 
