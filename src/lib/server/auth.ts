@@ -137,7 +137,11 @@ export const auth = betterAuth({
         sveltekitCookies(getRequestEvent),
     ],
     baseURL: {
-        allowedHosts: ["*"],
+        allowedHosts: [
+            "wil-fine-tune-register.onrender.com",
+            "localhost:5173",
+            "*",
+        ],
         fallback: "http://localhost:5173"
     }
 })
