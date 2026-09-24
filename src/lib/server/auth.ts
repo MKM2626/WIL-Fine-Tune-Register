@@ -128,6 +128,7 @@ export const auth = betterAuth({
 
                     },
                     data: profile
+
                 };
             }
             
@@ -142,6 +143,7 @@ export const auth = betterAuth({
             "localhost:5173",
             "*",
         ],
+        protocol: process.env.NODE_ENV === "development" ? "http" : "https",
         fallback: "http://localhost:5173"
     }
 })
