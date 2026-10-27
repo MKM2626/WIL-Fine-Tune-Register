@@ -3,6 +3,7 @@
     import { slide } from 'svelte/transition';
     import { Pencil, Trash, Globe, ChevronDown, CalendarDays, CalendarClock, MessageSquare, CircleCheck, CircleX } from '@lucide/svelte/icons';
     import type { FineTuneRow } from '#lib/types/getFineTuneDetailsSchema';
+    import { getGlobalFineTunes } from '#lib/remote/getSimple.remote';
 
     // TODO need to include session control on delete 
     let {
@@ -32,7 +33,19 @@
 
     const expired = $derived(row.expiryDate && row.expiryDate < new Date())
 
-    const globalCount = $derived(row.globals?.length ?? 0)
+    let globals = $state<ReturnType<typeof getGlobalFineTunes> | null>(null);
+
+    function toggleGlobals() {
+        globalOpen = !globalOpen;
+
+        if (globalOpen && !globals) {
+            globals = getGlobalFineTunes({
+                fineTuneId: row.id
+            });
+        }
+    }
+
+    
 
 </script>
 
@@ -107,37 +120,65 @@
         {#if row.globalId}
             <button
                 type="button"
-                onclick={() => (globalOpen = !globalOpen)}
+                onclick={toggleGlobals}
                 class="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg px-2.5 py-1 font-medium text-text-muted transition-colors hover:border-indigo-500 hover:text-text"
             >
                 <Globe size={14} />
                 Global
-                {#if globalCount > 0}
-                    <span class="rounded-full bg-bg-light px-1.5 text-[10px] text-text">{globalCount}</span>
-                {/if}
+                
                 <ChevronDown size={14} class="transition-transform {globalOpen ? 'rotate-180' : ''}" />
             </button>
         {/if}
     </div>
 
     <!-- global expand area section -->
-    {#if globalOpen}
+    {#if globalOpen && globals}
         <div transition:slide={{ duration: 300 }} class="px-5 pb-3">
             <div class="max-h-48 overflow-y-auto rounded-lg border border-border bg-bg p-3">
-                <p class="mb-2 text-xs font-medium text-text-muted">Global customers</p>
+                <p class="mb-2 text-xs font-medium text-text-muted">
+                    Global customers
+                    {#if globals?.ready}
+                        <span class="rounded-full bg-bg-light px-1.5 text-[10px] text-text-muted">{globals.current.length}</span>
+                    {/if}
+                </p>
+                
+                {#if globals.loading}
+                    <p class="py-3 text-xs text-text-muted">
+                        Loading global customers...
+                    </p>
+                {/if}
 
-                <div class="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
-                    {#each row.globals as customer (`${customer.customerRuleId}-${customer.fineTuneId}`)}
+                {#if globals.error}
+                    <p class="py-3 text-xs text-red-400">
+                        Failed to load global customers.
                         <button
                             type="button"
-                            title={customer.name}
-                            onclick={() => goto(`/details/${customer.customerRuleId}?fineTune=${customer.fineTuneId}`)}
-                            class="min-w-0 truncate rounded-lg border border-border bg-bg-light px-3 py-2 text-left text-xs text-text transition-colors hover:border-indigo-500"
+                            class="underline"
+                            onclick={() => globals?.refresh()}
                         >
-                            {customer.name}
+                            Retry
                         </button>
-                    {/each}
-                </div>
+                    </p>
+                {:else if globals.ready && globals.current.length === 0}
+                    <p class="py-2 text-xs text-text-muted">
+                        No other global customers.
+                    </p>
+                {:else if globals.ready}
+                    <div class="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
+                        {#each globals.current as customer (`${customer.customerRuleId}-${customer.fineTuneId}`)}
+                            <button
+                                type="button"
+                                title={customer.name}
+                                onclick={() =>
+                                    goto(`/details/${customer.customerRuleId}?fineTune=${customer.fineTuneId}`)
+                                }
+                                class="min-w-0 truncate rounded-lg border border-border bg-bg-light px-3 py-2 text-left text-xs text-text transition-colors hover:border-indigo-500"
+                            >
+                                {customer.name}
+                            </button>
+                        {/each}
+                    </div>
+                {/if}   
             </div>
         </div>
     {/if}
