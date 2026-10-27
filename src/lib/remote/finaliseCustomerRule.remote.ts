@@ -8,11 +8,14 @@ import { alias } from "drizzle-orm/sqlite-core";
 import { requireRole } from "../server/guard.ts";
 import { error } from "@sveltejs/kit";
 
+
+
+
 const finaliseSchema = type("string.numeric.parse") 
 export const finaliseCustomerRule = command(finaliseSchema, async (crId) => {
 
 
-    requireRole('senior')
+    const analyst = requireRole('senior')
 
     
 
@@ -20,7 +23,7 @@ export const finaliseCustomerRule = command(finaliseSchema, async (crId) => {
 
     const result = await db
         .update(fine_tunes)
-        .set({finalised: true})
+        .set({finalisedAnalystId: analyst.analystId})
         .where(and(
             eq(fine_tunes.customerRuleId, crId),
             eq(
