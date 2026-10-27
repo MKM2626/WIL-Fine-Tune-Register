@@ -1,28 +1,26 @@
-import { primaryKey, varchar } from "drizzle-orm/cockroach-core";
-import { sqliteTable, text, integer, unique, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
-// foreignKey ^
+import { sqliteTable, text, integer, unique, type AnySQLiteColumn, primaryKey, index } from "drizzle-orm/sqlite-core"
 
 export const rules = sqliteTable('rules', {
 	id: integer().primaryKey({ autoIncrement: true }),
-	name: varchar({ length: 255}).notNull()
+	name: text({ length: 255}).notNull().unique()
 });
 
 export const technologies = sqliteTable("technologies", {
 	id: integer().primaryKey({ autoIncrement: true }),
-	name: varchar({ length: 255}).notNull()
+	name: text({ length: 255}).notNull().unique()
 });
 
 export const customers = sqliteTable("customers", {
 	id: integer().primaryKey({ autoIncrement: true }),
-	name: varchar({ length: 255}).notNull(),
+	name: text({ length: 255}).notNull(),
 	technologyId: integer().notNull().references(() => technologies.id) // saying customer technologyId no exist no column
 });
 
 export const analysts = sqliteTable("analysts", {
 	id: integer().primaryKey({ autoIncrement: true }),
 	githubId: integer().notNull().unique(),
-	email: varchar({ length: 254 }).notNull().unique(),
-	name: varchar({ length: 255}).notNull(),
+	email: text({ length: 254 }).notNull().unique(),
+	name: text({ length: 255}).notNull(),
 });
 
 export const customer_rules = sqliteTable('customer_rules', {
@@ -41,38 +39,31 @@ export const fine_tunes = sqliteTable("fine_tunes", {
     date: integer({ mode: 'timestamp_ms' }).$defaultFn(() => new Date()).notNull(),
 	expiryDate: integer({ mode: 'timestamp_ms' }),
     customerRuleId: integer().references(() => customer_rules.id).notNull(),
-	globalId: varchar({ length: 36}),
+	
+	globalId: text({ length: 36}),
 
-	name: varchar({ length: 72}),
+	name: text({ length: 72}),
 	fineTune: text().notNull(),  
 	comment: text(),
 
 	analystId: integer().references(() => analysts.id).notNull(),
-
-	finalised: integer ({ mode: "boolean"}).notNull().$defaultFn(() => false),
 	finalisedAnalystId: integer().references(() => analysts.id),
 }, (t) => [
-	unique('unique_customer_rule_version')
-	.on(t.customerRuleId, t.version),
-	// foreignKey({
-	// 	columns: [t.previousFineTuneId],
-	// 	foreignColumns: [t.id],
-	// 	name: 'previous_fine_tune_id_fk'
-	// })
+	unique('unique_customer_rule_version').on(t.customerRuleId, t.version),
+	index('fine_tunes_global_id_idx').on(t.globalId)
 ]);
 
 export const tags = sqliteTable("tags", {
 	id: integer().primaryKey({ autoIncrement: true }),
-	name: varchar({ length: 72}).notNull().unique(),
+	name: text({ length: 72}).notNull().unique(),
 })
 
 export const fine_tune_tags = sqliteTable("fine_tune_tags", {
 	fineTuneId: integer().references(() => fine_tunes.id).notNull(),
 	tagId: integer().references(() => tags.id).notNull(),
-	}, 
-	(table) => [ primaryKey({ columns: [table.fineTuneId, table.tagId] })]
-
-)
+}, (table) => [ 
+	primaryKey({ columns: [table.fineTuneId, table.tagId] })
+])
 
 
 
