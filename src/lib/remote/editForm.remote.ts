@@ -32,6 +32,8 @@ export const editForm = form(
         if (!locals.user) error(401, 'Please sign in.')
         const isAllowed = atLeast(locals.user?.role, 'senior')
         
+
+
         const comment = data.comment ? data.comment.trim() == "" ? null : data.comment : undefined
         const name = data.name ? data.name.trim() == "" ? null : data.name : undefined
         const expiryDate = data.expiryDate && data.expiryDate.trim() !== '' ?  new Date(data.expiryDate) : undefined
@@ -45,41 +47,31 @@ export const editForm = form(
 
         try {
             await db.transaction(async (tx) => {
-                // await Promise.all([
-                    // (async () => {
 
-                        if (inputTags.length > 0 ) {
-                            await tx.insert(tags).values(inputTags.map((name) => ({name}))).onConflictDoNothing()
-                            const found = await tx.select({id: tags.id}).from(tags).where(inArray(tags.name, inputTags))
-                            tagIds.push(...found.map((tag) => tag.id))
-                        }
+                if (inputTags.length > 0 ) {
+                    await tx.insert(tags).values(inputTags.map((name) => ({name}))).onConflictDoNothing()
+                    const found = await tx.select({id: tags.id}).from(tags).where(inArray(tags.name, inputTags))
+                    tagIds.push(...found.map((tag) => tag.id))
+                }
 
-                        tagIds = [...new Set (tagIds)]
+                tagIds = [...new Set (tagIds)]
 
-                        
+                if (tagIds.length > 0) {
+                    await tx.insert(fine_tune_tags).values(tagIds.map((tagId) => ({ fineTuneId: data.id, tagId})))
+                }
 
-                        // await tx.delete(fine_tune_tags).where(eq(fine_tune_tags.fineTuneId, data.id))
+                const finalised = await tx.select({finalised: fine_tunes.finalisedAnalystId }).from(fine_tunes).where(eq(fine_tunes.id, data.id)).get()
 
-                        if (tagIds.length > 0) {
-                            await tx.insert(fine_tune_tags).values(tagIds.map((tagId) => ({ fineTuneId: data.id, tagId})))
-                        }
-                    // })(),
-
-                    // (async () => {
-                        const finalised = await tx.select({finalised: fine_tunes.finalised}).from(fine_tunes).where(eq(fine_tunes.id, data.id)).get()
-
-                        createFineTune = await tx.update(fine_tunes)
-                            .set({
-                                name: finalised?.finalised ? undefined : name,
-                                fineTune: finalised?.finalised ? undefined : fineTune,
-                                expiryDate: finalised?.finalised ? undefined : expiryDate,
-                                comment: comment,
-                                finalised: finalised?.finalised ? undefined : isAllowed ?  data.finalised : undefined
-                            })
-                            .where(eq(fine_tunes.id, data.id))
-                            .returning({ customerRuleId: fine_tunes.customerRuleId}).get()
-                    // })()
-                // ])
+                createFineTune = await tx.update(fine_tunes)
+                    .set({
+                        name: finalised?.finalised ? undefined : name,
+                        fineTune: finalised?.finalised ? undefined : fineTune,
+                        expiryDate: finalised?.finalised ? undefined : expiryDate,
+                        comment: comment,
+                        finalisedAnalystId: finalised?.finalised ? undefined : isAllowed ? locals.user?.analystId : undefined
+                    })
+                    .where(eq(fine_tunes.id, data.id))
+                    .returning({ customerRuleId: fine_tunes.customerRuleId}).get()
             });
         } catch(err) {
             if (isHttpError(error) && error.status < 500) throw err

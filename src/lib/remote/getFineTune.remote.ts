@@ -5,7 +5,7 @@ import { db } from '#lib/server/db/index'
 import { analysts, customers, fine_tunes, technologies, rules, customer_rules } from "#lib/server/db/schema";
 import { eq, sql } from 'drizzle-orm'
 import { alias } from "drizzle-orm/cockroach-core";
-// import { AppError } from "#lib/errors/appError";
+
 
 // get one fine tune detail
 const ftSchema = type("string.numeric.parse")
@@ -30,7 +30,7 @@ export const getFineTune = query(ftSchema, async (ftId) => {
         expiryDate: fine_tunes.expiryDate,
 
         globalId: fine_tunes.globalId,
-        finalised: fine_tunes.finalised,
+        finalised:  sql<boolean>`${fine_tunes.finalisedAnalystId} IS NOT NULL`,
 
         analystId: creatorAnalyst.id,
         analyst: creatorAnalyst.name,

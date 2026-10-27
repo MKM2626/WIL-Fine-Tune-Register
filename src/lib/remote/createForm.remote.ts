@@ -58,7 +58,6 @@ export const createForm = form(
                     fineTune: data.fineTune,
                     comment: comment,
                     expiryDate: expiryDate,
-                    finalised: data.finalised,
                     finalisedAnalystId: finalisedAnalystId,
                     globalId: globalId,
                     name: name,

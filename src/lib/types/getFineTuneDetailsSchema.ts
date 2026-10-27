@@ -30,6 +30,8 @@ export const inputFTDetailsSchema = type({
 export type inputFTDetailsSchema = typeof inputFTDetailsSchema.inferIn
 
 
+
+
 // export type FineTuneRow = ({
 //     id: string,
 //     date: Date,
@@ -59,11 +61,6 @@ export type FineTuneRow = ({
     version: number;
     expiryDate: Date | null;
     previousFineTuneId: string | null;
-    globals: {
-        fineTuneId: number;
-        customerRuleId: number;
-        name: string;
-    }[];
     globalId: string | null;
     finalised: boolean;
     analystName: string | null;
@@ -84,6 +81,7 @@ export type FineTuneRow = ({
         class?: undefined;
     })[];
 })
+
 
 
 

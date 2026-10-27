@@ -76,7 +76,7 @@ export const getCSV = query(
             .select({
                 customerRuleId: latestVersion.customerRuleId,
                 version: fine_tunes.version,
-                finalised: fine_tunes.finalised,
+                finalised:  sql<boolean>`${fine_tunes.finalisedAnalystId} IS NOT NULL`,
                 expiryDate: fine_tunes.expiryDate,
                 date: fine_tunes.date
             })
@@ -245,7 +245,8 @@ export const getCSV = query(
                     Date: sql<string>`strftime('%Y-%m-%dT%H:%M:%fWZ', ${fine_tunes.date} / 1000.0, 'unixepoch')`,
                     "Expiry Date": sql<string>`strftime('%Y-%m-%dT%H:%M:%fWZ', ${fine_tunes.expiryDate} / 1000.0, 'unixepoch')`, // can be null
                     Comment: fine_tunes.comment,
-                    Finalised: sql`${fine_tunes.finalised}`.mapWith((val) => val ? "Yes" : "No"),
+
+                    Finalised: sql<boolean>`${fine_tunes.finalisedAnalystId} IS NOT NULL`.mapWith((val) => val ? "Yes" : "No"),
 
                     Analyst: creatorAnalyst.name,
                     "Finalised Analyst": finaliseAnalyst.name,

@@ -9,7 +9,7 @@ import { SvelteSet } from "svelte/reactivity";
 
 
 // import { AppError } from "#lib/errors/appError";
-
+// TODO: Convert over to find many
 
 // ? Might be better if search only applies to the customer rule.
 const getCustomerRulesSchema = type({
@@ -106,7 +106,7 @@ export const getCustomerRules = query(getCustomerRulesSchema,
             .select({
                 customerRuleId: latestVersion.customerRuleId,
                 version: fine_tunes.version,
-                finalised: fine_tunes.finalised,
+                finalised:  sql<boolean>`${fine_tunes.finalisedAnalystId} IS NOT NULL`.as('finalised'),
                 expiryDate: fine_tunes.expiryDate,
                 date: fine_tunes.date
             })
@@ -155,7 +155,7 @@ export const getCustomerRules = query(getCustomerRulesSchema,
         const anySearchConditions = searchAny.length
             ? and(...searchAny.map(value => {
                 const term = `%${value}%`
-                const version = toVersion(term)
+                const version = toVersion(value)
 
                 return or(
                     like(rules.name, term),
@@ -230,16 +230,6 @@ export const getCustomerRules = query(getCustomerRulesSchema,
 
             .innerJoin(latestFineTunes, eq(customer_rules.id, latestFineTunes.customerRuleId))
 
-            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-
-            // left join latestFineTuneRow
-            // leftJoin latest fine tune 
-
-            
-            // ? Don't think I need join on this, as it would be in the exists where clause
-            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
             .where(where)
             .orderBy(sort)
         
@@ -259,13 +249,8 @@ export const getCustomerRules = query(getCustomerRulesSchema,
             .leftJoin(customers, eq(customer_rules.customerId, customers.id))
             .leftJoin(technologies, eq(customers.technologyId, technologies.id))
 
-            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-
             .innerJoin(latestFineTunes, eq(customer_rules.id, latestFineTunes.customerRuleId))
 
-            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
             .where(where)
             .orderBy(sort)
             .limit(data.pageSize)

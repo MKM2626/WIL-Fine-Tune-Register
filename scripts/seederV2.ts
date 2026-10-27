@@ -217,7 +217,6 @@ async function seed() {
                         fineTune: generateFineTune(),
                         comment: generateComment(),
                         analystId: analyst.id,
-                        finalised,
                         finalisedAnalystId: finalised ? finalisedAnalyst.id : null
                     }
 
@@ -329,7 +328,7 @@ async function seed() {
                     .orderBy(desc(fine_tunes.version))
                     .limit(1)
 
-                if (!latest || !latest.finalised) continue
+                if (!latest || !latest.finalisedAnalystId) continue
 
                 const date = new Date( latest.date.getTime() + DAYS_BETWEEN_FINE_TUNES * 24 * 60 * 60 * 1000 )
 
@@ -346,7 +345,6 @@ async function seed() {
                     fineTune,
                     comment: `Global fine tune applied to customers using ${technology.name} ${rule.name}.`,
                     analystId: analyst.id,
-                    finalised: false,
                     finalisedAnalystId: null
                 }
 

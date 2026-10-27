@@ -1,11 +1,8 @@
 import { query } from "$app/server";
-import { error } from '@sveltejs/kit';
+// import { error } from '@sveltejs/kit';
 import { type } from "arktype"
 import { db } from '#lib/server/db/index'
-import { analysts, fine_tunes, tags, fine_tune_tags } from "#lib/server/db/schema";
-import { eq, and, asc, desc, like, or, gte, lte, sql, isNotNull, isNull, countDistinct } from 'drizzle-orm'
 import { SvelteSet } from "svelte/reactivity";
-import { alias } from "drizzle-orm/cockroach-core";
 
 // get multiple fine tune details
 const GetFTDetailsSchema = type({
@@ -65,176 +62,98 @@ export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
         end = undefined
     }
 
-    // alias tables
-    const creatorAnalyst = alias(analysts, "creator_analyst")
-    const finaliseAnalyst = alias(analysts, 'finalise_analyst')
-    const previousFineTune = alias(fine_tunes, 'previous_fine_tune');
+    // helpers
+    const contains = (term: string) => ({ like: `%${term}%` })
+    const versions = searchVersion.map(Number).filter(Number.isInteger)
+    const orderBy = { version: data.descending ? "desc" : "asc" } as const
 
-    const where = and(
-        searchAny.length ? and(
-            ...searchAny.map(term => or(
-                like(fine_tunes.name, `%${term}%`), 
-                like(fine_tunes.fineTune, `%${term}%`),
-                like(creatorAnalyst.name, `%${term}%`),
-                like(finaliseAnalyst.name, `%${term}%`),
-                like(fine_tunes.comment, `%${term}%`),
-                like(tags.name, `%${term}%`), 
-                
-                /^\d+$/.test(term) ? eq(fine_tunes.version, Number(term)) : undefined
-            ))
-        ) : undefined,
 
-        searchName.length ? or(...searchName.map(term => like(fine_tunes.name, `%${term}%`))) : undefined,
-        searchFineTune.length ? or(...searchFineTune.map(term => like(fine_tunes.fineTune, `%${term}%`))) : undefined,
-       
-        searchAnalyst.length ? or(...searchAnalyst.map(term => like(creatorAnalyst.name, `%${term}%`))) : undefined,
-        searchFinalisedAnalyst.length ? or(...searchFinalisedAnalyst.map(term => like(finaliseAnalyst.name, `%${term}%`))) : undefined,
 
-        searchComment.length ? or(...searchComment.map(term => like(fine_tunes.comment, `%${term}%`))) : undefined,
+    const where = {
+        customerRuleId: data.customerRuleId,
 
-        searchVersion.length ? or( ...searchVersion.map(Number).filter(Number.isInteger).map(term => eq(fine_tunes.version, term))) : undefined,
+        // Const required for isNotNull and isNull, to stop typescript error
+        expiryDate: data.expiryDate === undefined ? undefined : data.expiryDate ? { isNotNull: true as const } : { isNull: true as const },
+        globalId: data.global === undefined ? undefined : data.global ? { isNotNull: true as const } : { isNull: true as const },
 
-        searchTags.length ? or( ...searchTags.map(term => like(tags.name, `%${term}%`))) : undefined,
+        finalisedAnalystId: data.finalised === undefined ? undefined : data.finalised ? { isNotNull: true as const } : { isNull: true as const },
 
-        data.expiryDate !== undefined ? data.expiryDate ? isNotNull(fine_tunes.expiryDate) : isNull(fine_tunes.expiryDate) : undefined,
-        data.finalised !== undefined ? eq(fine_tunes.finalised, data.finalised) : undefined,
-        data.global !== undefined ? data.global ? isNotNull(fine_tunes.globalId) : isNull(fine_tunes.globalId) : undefined,
+        date: start || end ? { gte: start, lte: end } : undefined,
 
-        start ? gte(fine_tunes.date, start) : undefined,
-        end ? lte(fine_tunes.date, end) : undefined,
+        name: searchName.length ? { OR: searchName.map(contains) } : undefined,
+        fineTune: searchFineTune.length ? { OR: searchFineTune.map(contains) } : undefined,
+        comment: searchComment.length ? { OR: searchComment.map(contains) } : undefined,
+        version: versions.length ? { in: versions } : undefined,
 
-        eq(fine_tunes.customerRuleId, data.customerRuleId)
-    )
+        analyst: searchAnalyst.length ? { OR: searchAnalyst.map(term => ({ name: contains(term) })) } : undefined,
+        finalisedAnalyst: searchFinalisedAnalyst.length ? { OR: searchFinalisedAnalyst.map(term => ({ name: contains(term) })) } : undefined,
+        tags: searchTags.length ? { OR: searchTags.map(term => ({ name: contains(term) })) } : undefined,
 
-    const [{ totalRows }] = await db
-        .select({
-            totalRows: countDistinct(fine_tunes.id)
-        })
-        .from(fine_tunes)
-        .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-        .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-        .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-        .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-        .where(where)
-    
+   
+        AND: searchAny.length
+            ? searchAny.map(term => ({
+                OR: [
+                    { name: contains(term) },
+                    { fineTune: contains(term) },
+                    { comment: contains(term) },
+                    { analyst: { name: contains(term) } },
+                    { finalisedAnalyst: { name: contains(term) } },
+                    { tags: { name: contains(term) } },
+                    ...(/^\d+$/.test(term) ? [{ version: Number(term) }] : [])
+                ]
+            }))
+            : undefined
+    } 
+
+    const matches = await db.query.fine_tunes.findMany({
+        where,
+        columns: { id: true },
+        orderBy
+    })
+
+    const totalRows = matches.length
     const totalPages = Math.ceil(totalRows / data.pageSize)
-    // const sort = data.descending ? desc(fine_tunes.date) : asc(fine_tunes.date)
-    const sort = data.descending ? desc(fine_tunes.version) : asc(fine_tunes.version)
 
     let page = data.page
 
     if (data.fineTuneId !== undefined) {
-        const selected = await db
-            .select({
-                // date: fine_tunes.date,
-                version: fine_tunes.version
-            })
-            .from(fine_tunes)
-            .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-            .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
-            .where(where)
-            .orderBy(sort)
-            .groupBy(fine_tunes.id) // TODO: Fine out if needed
-            .get()
-            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            // .where(and(where, eq(fine_tunes.id, data.fineTuneId)))
-            // .get();
-
-
-        if (!selected) error(404, "Fine Tune does not exist.")
-
-        const [{selectedCount}] = await db
-            .select({ selectedCount: countDistinct(fine_tunes.id)})
-            .from(fine_tunes)
-            .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-            .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
-            .where(where)
-            .orderBy(sort)
-            .groupBy(fine_tunes.id) // TODO: Fine out if needed
-
-            // .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-            // .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-            // .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-            // .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-            // // .where(and(where, data.descending? gt(fine_tunes.date, selected.date) : lt(fine_tunes.date, selected.date)))
-            // .where(and(where, data.descending? gt(fine_tunes.version, selected.version) : lt(fine_tunes.version, selected.version)))
-            // // TODO: Think I need a order by on this
-            // .orderBy(sort)
-
-
-        page = Math.floor(selectedCount / data.pageSize) + 1;
+        const index = matches.findIndex(m => m.id === data.fineTuneId)
+        if (index !== -1) page = Math.floor(index / data.pageSize) + 1
     }
 
+    const results = await db.query.fine_tunes.findMany({
+        where,
+        with: {
+            analyst: { columns: { name: true } },
+            finalisedAnalyst: { columns: { name: true } },
+            previousFineTune: { columns: { fineTune: true } },
+            tags: { columns: { name: true } }
+        },
+        orderBy,
+        limit: data.pageSize,
+        offset: (page - 1) * data.pageSize
+    })
 
+    const rows = results.map(result => ({
+        id: String(result.id),
+        date: result.date,
+        name: result.name,
 
-    
+        version: result.version,
+        previousFineTuneId: result.previousFineTuneId === null ? null : String(result.previousFineTuneId),
 
-    const rows = await db
-        .select({
-            id: sql<string>`${fine_tunes.id}`.mapWith(String), 
-            date: fine_tunes.date,
-            name: fine_tunes.name,
+        before: result.previousFineTune?.fineTune ?? 'Initial Rule',
+        after: result.fineTune,
 
-            version: fine_tunes.version,
-            previousFineTuneId: sql<string>`${fine_tunes.previousFineTuneId}`.mapWith(String),
+        expiryDate: result.expiryDate,
+        globalId: result.globalId,
+        finalised: result.finalisedAnalystId !== null,
 
-            before: sql<string>`COALESCE(${previousFineTune.fineTune}, 'Initial Rule')`,
-            after: fine_tunes.fineTune,
-
-            expiryDate: fine_tunes.expiryDate,
-
-            globals: sql`
-                (
-                    SELECT json_group_array(
-                        json_object(
-                            'fineTuneId', ft.id,
-                            'customerRuleId', cr.id,
-                            'name', c.name
-                        )
-                    )
-                    FROM fine_tunes ft
-                    JOIN customer_rules cr ON ft.customerRuleId = cr.id
-                    JOIN customers c ON cr.customerId = c.id
-                    WHERE ft.globalId IS NOT NULL
-                        AND ft.globalId = ${fine_tunes.globalId}
-                        AND ft.id != ${fine_tunes.id}
-                )
-            `.mapWith((value) => JSON.parse(value as string) as { fineTuneId: number; customerRuleId: number; name: string }[]),
-
-            globalId: fine_tunes.globalId,
-            finalised: fine_tunes.finalised,
-            analystName: creatorAnalyst.name,
-            finaliseAnalystName: finaliseAnalyst.name,
-            comment: fine_tunes.comment,
-            tags: sql`COALESCE( json_group_array(${tags.name}) FILTER (WHERE ${tags.name} IS NOT NULL), '[]')`.mapWith((value) => JSON.parse(value as string) as string[])
-        })
-        .from(fine_tunes)
-        .leftJoin(creatorAnalyst, eq(fine_tunes.analystId, creatorAnalyst.id))
-        .leftJoin(finaliseAnalyst, eq(fine_tunes.finalisedAnalystId, finaliseAnalyst.id))
-        .leftJoin(fine_tune_tags, eq(fine_tunes.id, fine_tune_tags.fineTuneId))
-        .leftJoin(tags, eq(fine_tune_tags.tagId, tags.id))
-        .leftJoin(previousFineTune, eq(fine_tunes.previousFineTuneId, previousFineTune.id))
-        .where(where)
-        .orderBy(sort)
-        .groupBy(fine_tunes.id) // TODO: Fine out if needed
-        .limit(data.pageSize)
-        .offset((page - 1) * data.pageSize)
-
-
-
-
-    
-
-
+        analystName: result.analyst.name,
+        finaliseAnalystName: result.finalisedAnalyst?.name ?? null,
+        comment: result.comment,
+        tags: result.tags.map(t => t.name)
+    }))
 
     return {
         rows,
@@ -245,8 +164,3 @@ export const getFineTuneDetails = query(GetFTDetailsSchema, async (data) => {
         selectedId: data.fineTuneId ? String(data.fineTuneId) : null
     }
 })
-
-
-
-
-
